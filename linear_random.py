@@ -37,6 +37,7 @@ def load_and_train(options):
 	
 	# define loss function
 	log_likelihood = -tf.reduce_sum( tf.square(h - y) ) # should be equivalent as (h-y)**2
+	err = tf.sqrt( tf.reduce_mean(tf.square(h-y)) )
 	train_step = tf.train.RMSPropOptimizer(0.01).minimize(-log_likelihood)
 	
 	# init and train
@@ -44,7 +45,6 @@ def load_and_train(options):
 		tf.initialize_all_variables().run()
 		for idx in range(options.num_epoch):
 			sess.run(train_step, feed_dict={x:x_data, y:y_data})
-			err = tf.sqrt( tf.reduce_mean(tf.square(h-y)) )
 			print('epoch', idx, 'err in training:', err.eval({x:x_data, y:y_data}))
 		return ((W.eval(), b.eval()), coeff_true)
 

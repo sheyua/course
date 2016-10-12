@@ -13,7 +13,7 @@ def day2week(df_in):
 	# get isoweek
 	df['Week'] = df['Date'].map(lambda x: x.isocalendar()[0:2])
 	# first day of the week
-	df['1st_day'] = np.append(True, df['Week'][1:] != df['Week'][:-1])
+	df['1st_day'] = np.append(True, df['Week'][1:].values != df['Week'][:-1].values)
 	# d_ln_p
 	df['d_ln_p'] = np.log(df['Close']) - df['1st_day'].astype(float) * np.log(df['Open']) -\
 	 np.append(0., (1.-df['1st_day'][1:].astype(float)) * np.log(df['Close'][:-1].values))

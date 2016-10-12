@@ -44,6 +44,9 @@ def load_and_train(options):
 	
 	# define loss function
 	log_likelihood = tf.reduce_mean( y*tf.log(h) + (1.-y)*tf.log(1.0-h) )
+	this_err = tf.reduce_mean(tf.cast(
+	  tf.not_equal( tf.greater(h,options.thres), tf.greater(y,options.thres) )
+	, tf.float32))
 	train_step = tf.train.GradientDescentOptimizer(0.5).minimize(-log_likelihood)
 	
 	# init and train
@@ -61,11 +64,6 @@ def load_and_train(options):
 				batch_pos += options.batch_size
 				# test the current model
 				num_batch += 1
-				this_err = tf.reduce_mean(
-						tf.cast(
-							tf.not_equal( tf.greater(h,options.thres), tf.greater(y,options.thres) )
-							, tf.float32)
-						)
 				err += this_err.eval({x:x_data, y:y_data})
 			print('epoch', idx, 'err: ', err/num_batch)
 		# in the test set

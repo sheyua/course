@@ -38,6 +38,8 @@ def load_and_train(options):
 	
 	# define loss function
 	cross_entropy = tf.reduce_mean( -tf.reduce_sum( tf.log(h)*y, reduction_indices=[1] ) )
+	correct_prediction = tf.equal( tf.argmax(h,1), tf.argmax(y,1) )
+	accuracy = tf.reduce_mean( tf.cast(correct_prediction, tf.float32) )
 	train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 	
 	# init and train
@@ -50,8 +52,6 @@ def load_and_train(options):
 			batch_xs, batch_ys = mnist.train.next_batch(options.batch_size)
 			sess.run(train_step, feed_dict={x:batch_xs, y:batch_ys})
 			# test the current model
-			correct_prediction = tf.equal( tf.argmax(h,1), tf.argmax(y,1) )
-			accuracy = tf.reduce_mean( tf.cast(correct_prediction, tf.float32) )
 			print('step', idx, 'acc:', accuracy.eval({x: batch_xs, y: batch_ys}))
 	
 		# evaluate the final results
