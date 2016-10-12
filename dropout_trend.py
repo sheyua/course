@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -i
+#!/usr/bin/python3
 '''
 A very linear regression with dropout layer.
 Fit stock weekly return.
@@ -39,9 +39,9 @@ def load_data(options):
 	for trend in tre_lst:
 		df_tre_lst[trend] = comp.day2week(pickle.load(open(loc+'/'+trend+'.dat','rb')))
 		interset = np.intersect1d(interset, df_tre_lst[trend]['Week'])
-	df = df_sym[df_sym['Week'] == interset]
+	df = df_sym[df_sym['Week'].isin(interset)]
 	for trend in tre_lst:
-		df[trend] = df_tre_lst[trend]['Ret'][df_tre_lst[trend]['Week'] == interset].values
+		df[trend] = df_tre_lst[trend]['Ret'][df_tre_lst[trend]['Week'].isin(interset)].values
 	x_df = df[[col for col in df.columns if col != 'Week' ]]
 	y_df = df['Ret'][1:]
 	return x_df.values.astype(np.float32), np.append(y_df.values,np.nan).astype(np.float32), df['Week'].values, [col for col in x_df.columns]
