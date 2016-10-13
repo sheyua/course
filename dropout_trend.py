@@ -1,11 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -i
 '''
 A very linear regression with dropout layer.
 Fit stock weekly return.
 '''
-import util.sym_lst as sym_lst
-import util.load_syms as load_syms
-import util.comp as comp
+import sys; sys.path.append('./utils')
+import sym
 import argparse
 import pickle
 import random
@@ -15,29 +14,29 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 
 def download_trends(options):
-	if options.download:
-		tre_lst = sym_lst.trend_lst()
-		load_syms.restart_trends_day(syms=tre_lst, loc=options.data_loc)
-		load_syms.resume_trends_day(syms=tre_lst, loc=options.data_loc)
+	if options.down_tre:
+		tre_lst = sym.trend_lst()
+		sym.restart_trends_day(syms=tre_lst, loc=options.data_loc)
+		sym.resume_trends_day(syms=tre_lst, loc=options.data_loc)
 
 def download_syms(sym_lst, options):
-	if options.download:
-		load_syms.restart_syms_day(syms=sym_lst, loc=options.data_loc)
+	if options.down_sym:
+		sym.restart_syms_day(syms=sym_lst, loc=options.data_loc)
 
 def load_data(options):
 	# symbol and data loc
-	sym = options.sym
+	symbol = options.symbol
 	loc = options.data_loc
 	# download data
 	download_trends(options)
-	download_syms([sym], options)
+	download_syms([symbol], options)
 	# build input
-	tre_lst = sym_lst.trend_lst()
-	df_sym = comp.day2week(pickle.load(open(loc+'/'+sym+'.dat','rb')))
+	tre_lst = sym.trend_lst()
+	df_sym = sym.day2week(pickle.load(open(loc+'/'+symbol+'.dat','rb')))
 	df_tre_lst = {}
 	interset = df_sym['Week']
 	for trend in tre_lst:
-		df_tre_lst[trend] = comp.day2week(pickle.load(open(loc+'/'+trend+'.dat','rb')))
+		df_tre_lst[trend] = sym.day2week(pickle.load(open(loc+'/'+trend+'.dat','rb')))
 		interset = np.intersect1d(interset, df_tre_lst[trend]['Week'])
 	df = df_sym[df_sym['Week'].isin(interset)]
 	for trend in tre_lst:
@@ -97,12 +96,15 @@ def load_and_train(options):
 
 def build_options():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--sym', type=str,
-		dest='sym', help='stock symbol',
+	parser.add_argument('--symbol', type=str,
+		dest='symbol', help='stock symbol',
 		metavar='SYM', default='NVDA')
-	parser.add_argument('--download', type=bool,
-		dest='download', help='whether or not to download daily data again',
-		metavar='DOWNLOAD', default=False)
+	parser.add_argument('--down-sym', type=bool,
+		dest='down_sym', help='whether or not to download daily stock data again',
+		metavar='DOWN_SYM', default=False)
+	parser.add_argument('--down-tre', type=bool,
+		dest='down_tre', help='whether or not to download daily trend data again',
+		metavar='DOWN_TRE', default=False)
 	parser.add_argument('--data-loc', type=str,
 		dest='data_loc', help='where stock data and goodle trends are stored',
 		metavar='DATA_LOC', default='./data/day')

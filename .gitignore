@@ -1,6 +1,7 @@
 # dat and lst files
 *.dat
 *.lst
+*.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
