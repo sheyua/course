@@ -27,12 +27,12 @@ class VGG19:
 		# batch size undetermined, 3 channel must be BGR
 		return tf.placeholder(tf.float32, [None, height, width, 3])
 	
-	def conv_layer(self, bottom, name, if_relu=True):
+	def conv_layer(self, bottom, name, with_relu=True):
 		# strides=[1, ?, ?, 1] for 2d images
 		# all vgg19 conv layers have ?, ? = 1, 1
 		conv = tf.nn.conv2d( bottom, self.load_weights(name), strides=[1,1,1,1], padding='SAME', name=name)
 		conv = tf.nn.bias_add(conv, self.load_bias(name), name=name+'_biased')
-		if if_relu:
+		if with_relu:
 			return tf.nn.relu(conv, name=name+'_biased'+'_relu')
 		else:
 			return conv

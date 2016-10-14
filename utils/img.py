@@ -55,18 +55,24 @@ def convert_img(img):
 	res_img[:,:,2] = red
 	return res_img
 
-def view_layer(layer_output):
+def view_layer(layer_output, label_chan=False):
 	batch_size, height, width, nchan = layer_output.shape
 	nx = np.ceil(np.sqrt(nchan)).astype(int)
-	ny = np.ceil(nchan / nx).astype(int)
+	ny = np.ceil(1.0*nchan / nx).astype(int)
 	for fdx in range(batch_size):
 		plt.ion()
 		fig, axarr = plt.subplots(ny, nx)
-		for chdx in range(nchan):
-			ydx = np.floor(chdx/nx).astype(int)
-			xdx = chdx - ydx*nx
-			axarr[ydx, xdx].imshow(layer_output[fdx, :,:, chdx])
-			axarr[ydx, xdx].set_xticks([])
-			axarr[ydx, xdx].set_yticks([])
-			axarr[ydx, xdx].set_title(str(chdx+1))
+		for ydx in range(ny):
+			for xdx in range(nx):
+				chdx = ydx*nx + xdx
+				if chdx >= nchan:
+					axarr[ydx, xdx].axis('off')
+				else:
+					axarr[ydx, xdx].imshow(layer_output[fdx, :,:, chdx])
+					axarr[ydx, xdx].set_xticks([])
+					axarr[ydx, xdx].set_yticks([])
+					if label_chan:
+						axarr[ydx, xdx].text(0.5, 0.9, str(chdx+1),
+						  horizontalalignment='center', transform=axarr[ydx, xdx].transAxes)
 		plt.tight_layout()
+		plt.subplots_adjust(hspace=0, wspace=0)
