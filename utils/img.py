@@ -61,7 +61,7 @@ def view_layer(layer_output):
 	ny = np.ceil(nchan / nx).astype(int)
 	for fdx in range(batch_size):
 		plt.ion()
-		fig, axarr = plt.subplots(nx, ny)
+		fig, axarr = plt.subplots(ny, nx)
 		for chdx in range(nchan):
 			ydx = np.floor(chdx/nx).astype(int)
 			xdx = chdx - ydx*nx

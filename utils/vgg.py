@@ -19,7 +19,7 @@ class VGG19:
 	def load_weights(self, name):
 		return tf.constant(self.data_dict[name][0], name=name+'_weights')
 	
-	def load__bias(self, name):
+	def load_bias(self, name):
 		return tf.constant(self.data_dict[name][1], name=name+'_bias')
 	
 	# layer constructors
@@ -27,15 +27,26 @@ class VGG19:
 		# batch size undetermined, 3 channel must be BGR
 		return tf.placeholder(tf.float32, [None, height, width, 3])
 	
-	def conv_layer(self, bottom, name):
+	def conv_layer(self, bottom, name, if_relu=True):
 		# strides=[1, ?, ?, 1] for 2d images
+		# all vgg19 conv layers have ?, ? = 1, 1
 		conv = tf.nn.conv2d( bottom, self.load_weights(name), strides=[1,1,1,1], padding='SAME', name=name)
-		return tf.nn.bias_add(conv, self.load_bias(name), name=name+'_biased')
+		conv = tf.nn.bias_add(conv, self.load_bias(name), name=name+'_biased')
+		if if_relu:
+			return tf.nn.relu(conv, name=name+'_biased'+'_relu')
+		else:
+			return conv
 	
 	def avg_pool(self, bottom, name):
+		# kernel_size=[1, ?, ?, 1] for 2d images
+		# strides=[1, ?, ?, 1] for 2d images
+		# all vgg19 pool layers have ?, ? = 2, 2
 		return tf.nn.avg_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name=name)
 	
 	def max_pool(self, bottom, name):
+		# kernel_size=[1, ?, ?, 1] for 2d images
+		# strides=[1, ?, ?, 1] for 2d images
+		# all vgg19 pool layers have ?, ? = 2, 2
 		return tf.nn.max_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name=name)
 	
 	def fc_layer(self, bottom, name):
