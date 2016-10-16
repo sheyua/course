@@ -55,6 +55,9 @@ def convert_img(img):
 	res_img[:,:,2] = red
 	return res_img
 
+def resize_img(img, height=224, width=224):
+	return scipy.misc.imresize(img, (height, width, 3)).astype(np.float32)
+
 def view_layer(layer_output, label_chan=False):
 	batch_size, height, width, nchan = layer_output.shape
 	nx = np.ceil(np.sqrt(nchan)).astype(int)
