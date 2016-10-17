@@ -55,8 +55,23 @@ def convert_img(img):
 	res_img[:,:,2] = red
 	return res_img
 
+# revert VGG style back to RGB
+def revert_img(img):
+	# B G R
+	vgg_mean = np.array([103.939, 116.779, 123.68]).astype(np.float32)
+	blue, green, red = [ img[:,:,idx] + vgg_mean[idx] for idx in range(3) ]
+	res_img = np.empty(img.shape, np.float32)
+	# R G B
+	res_img[:,:,0] = red
+	res_img[:,:,1] = green
+	res_img[:,:,2] = blue
+	return res_img
+
 def resize_img(img, height=224, width=224):
 	return scipy.misc.imresize(img, (height, width, 3)).astype(np.float32)
+
+def white_noise(height=224, width=224):
+	return np.random.uniform(0.0, 255.0, (height, width, 3)).astype(np.float32)
 
 def view_layer(layer_output, label_chan=False):
 	batch_size, height, width, nchan = layer_output.shape
