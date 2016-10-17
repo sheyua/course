@@ -30,7 +30,7 @@ This repository contains a few examples of basic tensorflow usage and
 
 	*dev_art.py* implements a neural algorithm of artistic style transformation
 	arxiv.org/abs/1508.06576
-	mixing the artistic style of vincent van Gogh's master piece
+	mixing the artistic style of Georges Seurat's A Sunday Afternoon on the Island of La Grande Jatte
 <p align="center">
   <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/art1.jpg" height="200"/>
 </p>
