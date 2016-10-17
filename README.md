@@ -32,7 +32,7 @@ This repository contains a few examples of basic tensorflow usage and
 	arxiv.org/abs/1508.06576
 	mixing the artistic style of vincent van Gogh's master piece
 <p align="center">
-  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/art1.jpg" height="300"/>
+  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/art1.jpg" height="200"/>
 </p>
 	into the above image and obtain
 <p align="center">
