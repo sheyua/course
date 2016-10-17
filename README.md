@@ -26,7 +26,7 @@ This repository contains a few examples of basic tensorflow usage and
 	
 	for image
 
-![image](data/img/file.jpg = 250x)
+![image](https://github.com/sy0302/LearnTensorflow/blob/master/data/img/output.jpg =250x)
 
 - **A Neural Algorithm of Artistic Style**
 
