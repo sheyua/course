@@ -4,19 +4,17 @@ This repository contains a few examples of basic tensorflow usage and
 
 - **Object Classification**
 
-	utils/vgg.py implements caffe VGG19 for tensorflow
-
-		www.robots.ox.ac.uk/~vgg/research/very_deep/
-
+	utils/vgg.py implements caffe model VGG19 for tensorflow
+	www.robots.ox.ac.uk/~vgg/research/very_deep/
 	execution of *basic_vgg19.py* should give
 
 		tiger, Panthera tigris prob: 0.569161
 		tiger cat prob: 0.421618
 		zebra prob: 0.00868218
-
-	for image
-
-![image](data/img/tiger.jpg =250x)
+		for image
+		<p align="center">
+		  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/tiger.jpg" width="250">
+		</p>
 
 	and
 
