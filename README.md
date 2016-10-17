@@ -13,7 +13,7 @@ This repository contains a few examples of basic tensorflow usage and
 		zebra prob: 0.00868218
 		for image
 <p align="center">
-  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/tiger.jpg" width="250">
+  <img src="https://github.com/sy0302/TensorflowTutorial/blob/master/data/img/tiger.jpg" width="250">
 </p>
 
 	and
@@ -23,7 +23,7 @@ This repository contains a few examples of basic tensorflow usage and
 		malamute, malemute, Alaskan malamute prob: 0.0196398
 		for image
 <p align="center">
-  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/file.jpg" height="250"/>.
+  <img src="https://github.com/sy0302/TensorflowTutorial/blob/master/data/img/file.jpg" height="250"/>.
 </p>
 
 - **A Neural Algorithm of Artistic Style**
@@ -32,9 +32,9 @@ This repository contains a few examples of basic tensorflow usage and
 	arxiv.org/abs/1508.06576
 	mixing the artistic style of Georges Seurat's A Sunday Afternoon on the Island of La Grande Jatte
 <p align="center">
-  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/art1.jpg" height="200"/>
+  <img src="https://github.com/sy0302/TensorflowTutorial/blob/master/data/img/art1.jpg" height="200"/>
 </p>
 	into the above image and obtain
 <p align="center">
-  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/output.jpg" height="250"/>.
+  <img src="https://github.com/sy0302/TensorflowTutorial/blob/master/data/img/output.jpg" height="250"/>.
 </p>
