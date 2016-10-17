@@ -102,7 +102,7 @@ class VGG19:
 			if layer == top_layer:
 				break
 	
-	def predict(self, prob, num=5):
+	def predict(self, prob, num=3):
 		ncase, nobj = prob.shape
 		assert nobj == 1000
 		if not hasattr(self, 'obj_lst'):
