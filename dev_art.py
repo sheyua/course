@@ -89,7 +89,7 @@ cont_ten = comp_cont_ten( cont, cont_feature, vgg_obj )
 
 cont_remix = tf.Variable(cont)
 vgg_obj.build_upto(cont_remix, 'pool5', False)
-loss_1 = 1e-6 * tf.reduce_mean( tf.square(vgg_obj.layers[cont_feature] - cont_ten) )
+loss_1 = 1e-5 * tf.reduce_mean( tf.square(vgg_obj.layers[cont_feature] - cont_ten) )
 loss_2 = tf.constant(np.float32(0.0))
 gram_style = {}
 for style in sty_features:
@@ -113,3 +113,6 @@ with tf.Session() as sess:
 		if this_err < err:
 			err = this_err
 			output = cont_remix.eval()[0,:,:,:]
+
+import scipy.misc
+scipy.misc.imsave('./data/img/output.jpg', img.revert_img(output).astype(np.uint8))
