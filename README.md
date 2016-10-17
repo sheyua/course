@@ -25,7 +25,9 @@ This repository contains a few examples of basic tensorflow usage and
 		malamute, malemute, Alaskan malamute prob: 0.0196398
 	
 	for image
-<p><img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/file.jpg" height="250" align="middle"></p>
+<p align="center">
+  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/file.jpg" height="250"/>
+</p>
 
 - **A Neural Algorithm of Artistic Style**
 
