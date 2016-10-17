@@ -27,11 +27,6 @@ bgr = np.array( [
 			img.load_img('./data/img/file.jpg')
 		)
 	),
-	img.convert_img(
-		img.resize_img(
-			img.load_img('./data/img/art.jpg')
-		)
-	),
 ] )
 vgg19 = vgg.VGG19('./data/vgg19.npy')
 

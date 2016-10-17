@@ -6,7 +6,7 @@ import vgg
 from matplotlib import pyplot as plt
 
 # load images and convert to vgg19 style
-def load_sty_imgs(imgs=['./data/img/art1.jpg']):
+def load_sty_imgs(imgs=['./data/img/art2.jpg']):
 	sty_imgs = []
 	for image in imgs:
 		sty_imgs.append(np.array([
@@ -115,4 +115,4 @@ with tf.Session() as sess:
 			output = cont_remix.eval()[0,:,:,:]
 
 import scipy.misc
-scipy.misc.imsave('./data/img/output.jpg', img.revert_img(output).astype(np.uint8))
+scipy.misc.imsave('./data/img/output2.jpg', img.revert_img(output).astype(np.uint8))
