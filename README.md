@@ -4,32 +4,37 @@ This repository contains a few examples of basic tensorflow usage and
 
 - **Object Classification**
 
-	utils/vgg.py implements caffe model VGG19 for tensorflow
-	www.robots.ox.ac.uk/~vgg/research/very_deep/
-	execution of *basic_vgg19.py* should give
+	*utils/vgg.py* implements caffe model VGG19 for tensorflow
+	www.robots.ox.ac.uk/~vgg/research/very_deep/.
+	execution of *basic_vgg19.py* should give:
 
 		tiger, Panthera tigris prob: 0.569161
 		tiger cat prob: 0.421618
 		zebra prob: 0.00868218
 		for image
-		<p align="center">
-		  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/tiger.jpg" width="250">
-		</p>
+<p align="center">
+  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/tiger.jpg" width="250">
+</p>
 
 	and
 
 		Samoyed, Samoyede prob: 0.833102
 		Siberian husky prob: 0.0217978
 		malamute, malemute, Alaskan malamute prob: 0.0196398
-	
-	for image
+		for image
 <p align="center">
-  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/file.jpg" height="250"/>
+  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/file.jpg" height="250"/>.
 </p>
 
 - **A Neural Algorithm of Artistic Style**
 
 	*dev_art.py* implements a neural algorithm of artistic style transformation
-		arxiv.org/abs/1508.06576
-
-	![image](data/img/art1.jpg?raw=true)
+	arxiv.org/abs/1508.06576
+	mixing the artistic style of vincent van Gogh's master piece
+<p align="center">
+  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/art1.jpg" height="300"/>
+</p>
+	into the above image and obtain
+<p align="center">
+  <img src="https://github.com/sy0302/LearnTensorflow/blob/master/data/img/output.jpg" height="250"/>.
+</p>
