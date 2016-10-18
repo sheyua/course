@@ -43,6 +43,9 @@ from matplotlib import pyplot as plt
 def load_img(path):
 	return scipy.misc.imread(path).astype(np.float32)
 
+def save_img(path, img):
+	return scipy.misc.imsave(path, img.astype(np.uint8))
+
 # convert image to VGG style, BGR - mean
 def convert_img(img):
 	# R G B
