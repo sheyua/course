@@ -17,11 +17,11 @@ def plotImage(data, idx, pred=-1):
 	plt.ion()
 	plt.figure()
 	plt.pcolor(arr2)
-	plt.gca().invert_yaxis()
 	plt.xlim((0,in_dim))
 	plt.xticks([])
 	plt.xlabel('true: '+str(data.labels[idx]), fontsize=25)
 	plt.ylim((0,in_dim))
+	plt.gca().invert_yaxis()
 	plt.yticks([])
 	if pred>=0 and pred<10:
 		plt.title('pred: '+str(pred), fontsize=25)
