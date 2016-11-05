@@ -35,7 +35,7 @@ def load_and_train(options):
 	
 	# construst the model
 	x = tf.placeholder(tf.float32, [None, in_dim*in_dim])
-	cell = tf.nn.rnn_cell.BasicLSTMCell(options.num_units, state_is_tuple=True) # default forget_bias=1.0
+	cell = tf.nn.rnn_cell.DropoutWrapper( tf.nn.rnn_cell.BasicLSTMCell(options.num_units, state_is_tuple=True), output_keep_prob=0.5) # default forget_bias=1.0
 	_, last_states = tf.nn.dynamic_rnn(
 		cell = cell,
 		dtype = tf.float32,
@@ -55,16 +55,13 @@ def load_and_train(options):
 	train_step = tf.train.AdamOptimizer(0.005).minimize(cross_entropy)
 	
 	# init and train
-	if num_of_train < options.train_size:
-		options.train_size = num_of_train
-	num_of_loops = np.floor( options.train_size / options.batch_size ).astype(int)
 	with tf.Session() as sess:
 		tf.initialize_all_variables().run()
-		for idx in range(num_of_loops):
+		for idx in range(options.train_steps):
 			batch_xs, batch_ys = mnist.train.next_batch(options.batch_size)
 			sess.run(train_step, feed_dict={x:batch_xs, y:batch_ys})
 			# test the current model
-			print('step', idx, 'acc:', accuracy.eval({x: batch_xs, y: batch_ys}))
+			print('step', idx, 'acc:', accuracy.eval({x: batch_xs, y: batch_ys}), 'epoch:', mnist.train.epochs_completed)
 	
 		# evaluate the final results
 		results = tf.argmax(h,1).eval({x:mnist.test.images})
@@ -76,9 +73,9 @@ def build_options():
 	parser.add_argument('--batch-size', type=int,
 		dest='batch_size', help='number of digit images to be feeded at one time',
 		metavar='BATCH_SIZE', default=220)
-	parser.add_argument('--train-size', type=int,
-		dest='train_size', help='total number of digit images to be trained',
-		metavar='TRAIN_SIZE', default=55000)
+	parser.add_argument('--train-steps', type=int,
+		dest='train_steps', help='total number of steps in training, reset when one epoch is completed',
+		metavar='TRAIN_STEPS', default=2000)
 	parser.add_argument('--num-units', type=int,
 		dest='num_units', help='dimension of LSTM hidden/memory state',
 		metavar='NUM_UNITS', default=48)
