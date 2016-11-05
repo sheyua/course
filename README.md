@@ -6,7 +6,7 @@ This repository contains a few examples of basic tensorflow usage and
 
 	*utils/vgg.py* implements caffe model VGG19 for tensorflow
 	www.robots.ox.ac.uk/~vgg/research/very_deep/.
-	execution of *basic_vgg19.py* should give:
+	execution of *ch4_conv_vgg19.py* should give:
 
 		tiger, Panthera tigris prob: 0.569161
 		tiger cat prob: 0.421618
@@ -28,7 +28,7 @@ This repository contains a few examples of basic tensorflow usage and
 
 - **A Neural Algorithm of Artistic Style**
 
-	*neural_styler.py* implements a neural algorithm of artistic style transformation
+	*ch5_conv_neural_styler.py* implements a neural algorithm of artistic style transformation
 	arxiv.org/abs/1508.06576
 	mixing the artistic style of Georges Seurat's A Sunday Afternoon on the Island of La Grande Jatte
 <p align="center">
