@@ -127,7 +127,7 @@ h = tf.matmul(last_states[1], W) + b
 y = tf.placeholder(tf.float32, [None, out_dim])
 
 # define loss function
-cost_function = tf.sqrt( tf.reduce_mean( (y-h)**2 ) )
+cost_function = tf.reduce_mean( tf.abs( (h-y) / y ) )
 train_step = tf.train.AdamOptimizer(0.005).minimize(cost_function)
 
 with tf.Session() as sess:
@@ -135,6 +135,6 @@ with tf.Session() as sess:
 	for idx in range(options.num_epoch):
 		sess.run(train_step, feed_dict={x:xdata['train'], y:ydata['train']})
 		print('epoch', idx, 
-			': cross valid RMSE', cost_function.eval(feed_dict={x:xdata['cross'], y:ydata['cross']})
+			': cross valid MAPE', cost_function.eval(feed_dict={x:xdata['cross'], y:ydata['cross']})
 		)
 	print('Next week volatility prediction:', h.eval(feed_dict={x:xdata['last']})[0,0])
