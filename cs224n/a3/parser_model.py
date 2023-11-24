@@ -31,7 +31,7 @@ class ParserModel(Module):
     @property
     def dtype(self) -> dtype: return self.embeddings.dtype
 
-    def __init__(self, embeddings: ndarray, n_features: int=36, hidden_size: int=200, n_classes: int=3,
+    def __init__(self, embeddings: ndarray, n_features: int=36, hidden_size: int=250, n_classes: int=3,
                  dropout_prob: float=0.5) -> None:
         """ Initialize the parser model.
 

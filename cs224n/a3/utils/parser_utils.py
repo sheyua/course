@@ -32,11 +32,11 @@ class Config(object):
     use_pos = True
     use_dep = True
     use_dep = use_dep and (not unlabeled)
-    data_path = './data'
+    data_path = os.path.abspath(f'{__file__}/../../data')
     train_file = 'train.conll'
     dev_file = 'dev.conll'
     test_file = 'test.conll'
-    embedding_file = './data/en-cw.txt'
+    embedding_file = os.path.abspath(f'{__file__}/../../data/en-cw.txt')
 
 
 class Parser(object):

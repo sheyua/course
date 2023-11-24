@@ -49,3 +49,17 @@ ROOT										ROOT -> parsed		RIGHT-ARC
 
 (b)
 2n
+
+(f)
+i.	Error type: Verb Phrase Attachment Error
+	Incorrect dependency: wedding -> fearing
+	Correct dependency: heading -> fearing
+ii.	Error type: Coordination Attachment Error
+	Incorrect dependency: makes -> rescue
+	Correct dependency: rush -> rescue
+iii.	Error type: Preposition Phrase Attachment Error
+	Incorrect dependency: named -> Midland
+	Correct dependency: guy -> Midland
+iv.	Error type: Modifier Attachment Error
+	Incorrect dependency: elements -> most
+	Correct dependency: crucial -> most
