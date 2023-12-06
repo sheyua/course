@@ -16,6 +16,7 @@ from torch.utils.data.dataloader import DataLoader
 
 logger = logging.getLogger(__name__)
 
+
 class TrainerConfig:
     # optimization parameters
     max_epochs = 10
@@ -35,6 +36,7 @@ class TrainerConfig:
     def __init__(self, **kwargs):
         for k,v in kwargs.items():
             setattr(self, k, v)
+
 
 class Trainer:
 
@@ -71,6 +73,7 @@ class Trainer:
 
             losses = []
             pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
+
             for it, (x, y) in pbar:
 
                 # place data on the correct device
@@ -79,8 +82,9 @@ class Trainer:
 
                 # forward the model
                 with torch.set_grad_enabled(is_train):
+                    # collapse all losses if they are scattered on multiple gpus
                     logits, loss = model(x, y)
-                    loss = loss.mean() # collapse all losses if they are scattered on multiple gpus
+                    loss = loss.mean()
                     losses.append(loss.item())
 
                 if is_train:
@@ -118,7 +122,6 @@ class Trainer:
         best_loss = float('inf')
         self.tokens = 0 # counter used for learning rate decay
         for epoch in range(config.max_epochs):
-
             run_epoch('train')
             if self.test_dataset is not None:
                 test_loss = run_epoch('test')

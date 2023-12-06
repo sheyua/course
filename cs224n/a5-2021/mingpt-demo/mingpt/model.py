@@ -78,6 +78,7 @@ class CausalSelfAttention(nn.Module):
         y = self.resid_drop(self.proj(y))
         return y
 
+
 class Block(nn.Module):
     """ an unassuming Transformer block """
 
@@ -97,6 +98,7 @@ class Block(nn.Module):
         x = x + self.attn(self.ln1(x))
         x = x + self.mlp(self.ln2(x))
         return x
+
 
 class GPT(nn.Module):
     """  the full GPT language model, with a context size of block_size """
@@ -182,8 +184,10 @@ class GPT(nn.Module):
         assert t <= self.block_size, "Cannot forward, model block size is exhausted."
 
         # forward the GPT model
-        token_embeddings = self.tok_emb(idx) # each index maps to a (learnable) vector
-        position_embeddings = self.pos_emb[:, :t, :] # each position maps to a (learnable) vector
+        # each index maps to a (learnable) vector
+        token_embeddings = self.tok_emb(idx)
+        # each position maps to a (learnable) vector
+        position_embeddings = self.pos_emb[:, :t, :]
         x = self.drop(token_embeddings + position_embeddings)
         x = self.blocks(x)
         x = self.ln_f(x)
