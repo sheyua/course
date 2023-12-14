@@ -8,108 +8,89 @@ GPT model:
 - the final decoder is a linear projection into a vanilla Softmax classifier
 """
 
-import math
+from logging import getLogger
+from typing import Optional, Tuple
+from torch import Tensor, zeros
+from torch.nn.functional import cross_entropy
+from torch.nn import Module, Embedding, Dropout, Parameter, Sequential, LayerNorm, Linear, GELU
+from .config import GPTConfig
+from .attention import Block
 
-import torch
-import torch.nn as nn
-from torch.nn import functional as F
 
-import attention
+logger = getLogger(name=__name__)
 
 
-class GPTConfig:
-    """ base GPT config, params common to all GPT versions """
-    embd_pdrop = 0.1
-    resid_pdrop = 0.1
-    attn_pdrop = 0.1
-    additive = False
+class GPT(Module):
+    """
+        the full GPT language model, with a context size of block_size
+    """
+    @property
+    def num_parameter(self) -> int: return sum(value.numel() for value in self.parameters())
 
-    def __init__(self, vocab_size, block_size, **kwargs):
-        self.vocab_size = vocab_size
-        self.block_size = block_size
-        for k,v in kwargs.items():
-            setattr(self, k, v)
+    @property
+    def init_std(self) -> float: return .02
 
-class GPT1Config(GPTConfig):
-    """ GPT-1 like network roughly 125M params """
-    n_layer = 12
-    n_head = 12
-    n_embd = 768
+    def __init__(self, config: GPTConfig) -> None:
+        """
 
-class Block(nn.Module):
-    """ an unassuming Transformer block """
-
-    def __init__(self, config):
+        """
         super().__init__()
-        self.ln1 = nn.LayerNorm(config.n_embd)
-        self.ln2 = nn.LayerNorm(config.n_embd)
-        if config.additive:
-            self.attn = attention.AdditiveSelfAttention(config)
-        else:
-            self.attn = attention.CausalSelfAttention(config)
-        self.mlp = nn.Sequential(
-            nn.Linear(config.n_embd, 4 * config.n_embd),
-            nn.GELU(),
-            nn.Linear(4 * config.n_embd, config.n_embd),
-            nn.Dropout(config.resid_pdrop),
-        )
-
-    def forward(self, x):
-        x = x + self.attn(self.ln1(x))
-        x = x + self.mlp(self.ln2(x))
-        return x
-
-class GPT(nn.Module):
-    """  the full GPT language model, with a context size of block_size """
-
-    def __init__(self, config):
-        super().__init__()
+        self.block_size = config.block_size
 
         # input embedding stem
-        self.tok_emb = nn.Embedding(config.vocab_size, config.n_embd)
-        self.pos_emb = nn.Parameter(torch.zeros(1, config.block_size, config.n_embd))
-        self.drop = nn.Dropout(config.embd_pdrop)
+        self.token_embedding = Embedding(num_embeddings=config.vocab_size, embedding_dim=config.embedding_dim)
+        size = [1, config.block_size, config.embedding_dim]
+        self.position_embedding = Parameter(data=zeros(*size))
+        self.dropout = Dropout(p=config.embd_pdrop, inplace=False)
+
         # transformer
-        self.blocks = nn.Sequential(*[Block(config) for _ in range(config.n_layer)])
+        self.blocks = Sequential(*[Block(config=config) for _ in range(config.n_layer)])
         # decoder head
-        self.ln_f = nn.LayerNorm(config.n_embd)
-        self.head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        self.ln_f = LayerNorm(normalized_shape=config.embedding_dim)
+        self.head = Linear(in_features=config.embedding_dim, out_features=config.vocab_size, bias=False)
+        self.apply(self.__init_weights__)
+        logger.info(f'number of parameters on the GPT model is {self.num_parameter}')
 
-        self.block_size = config.block_size
-        self.apply(self._init_weights)
+    def __init_weights__(self, module: Module) -> None:
+        """
 
-        print("number of parameters: {}".format(sum(p.numel() for p in self.parameters())))
-
-    def _init_weights(self, module):
-        if isinstance(module, (nn.Linear, nn.Embedding)):
-            module.weight.data.normal_(mean=0.0, std=0.02)
-            if isinstance(module, nn.Linear) and module.bias is not None:
+        """
+        if isinstance(module, (Linear, Embedding)):
+            module.weight.data.normal_(mean=0.0, std=self.init_std)
+            if isinstance(module, Linear) and module.bias is not None:
                 module.bias.data.zero_()
-        elif isinstance(module, nn.LayerNorm):
+        elif isinstance(module, LayerNorm):
             module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
+            module.weight.data.fill_(value=1.0)
+        else:
+            pass
+    #
+    # def get_block_size(self):
+    #     return self.block_size
 
-    def get_block_size(self):
-        return self.block_size
+    def forward(self, inputs: Tensor, target: Optional[Tensor]=None) -> Tuple[Tensor, Optional[Tensor]]:
+        """
 
-    def forward(self, idx, targets=None):
-        b, t = idx.size()
-        assert t <= self.block_size, "Cannot forward, model block size is exhausted."
-
+        """
+        batch_size, block_size = inputs.shape
+        if block_size > self.block_size:
+            raise ValueError('cannot forward, model block size is exhausted.')
         # forward the GPT model
-        token_embeddings = self.tok_emb(idx) # each index maps to a (learnable) vector
-        position_embeddings = self.pos_emb[:, :t, :] # each position maps to a (learnable) vector
-        x = self.drop(token_embeddings + position_embeddings)
-        x = self.blocks(x)
-        x = self.ln_f(x)
-        logits = self.head(x)
+        # each index maps to a (learnable) vector
+        token_embedding = self.token_embedding(input=inputs)
+        # each position maps to a (learnable) vector
+        position_embedding = self.position_embedding[:, :block_size, :]
+        x = self.dropout(input=token_embedding + position_embedding)
+
+        # feed to attention layers
+        x = self.blocks(input=x)
+        x = self.ln_f(input=x)
+        logits = self.head(input=x)
 
         # if we are given some desired targets also calculate the loss
-        loss = None
-        if targets is not None:
-            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=0)
-
+        if target is not None:
+            total_size = batch_size * block_size
+            loss = cross_entropy(input=logits.view(total_size, -1), target=target.view(total_size), ignore_index=0)
+        else:
+            loss = None
         return logits, loss
-
-class CustomLayerNorm(nn.Module):
-  pass
