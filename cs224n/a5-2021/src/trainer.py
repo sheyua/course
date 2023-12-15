@@ -4,9 +4,9 @@ so nothing in this file really has anything to do with GPT specifically.
 
 We suggest not changing anything in this file.
 """
+from numpy import pi, cos
 from typing import Optional
 from logging import getLogger
-from numpy import pi, cos, mean
 from torch import set_grad_enabled, save
 from torch.cuda import is_available, current_device
 from torch.nn import DataParallel

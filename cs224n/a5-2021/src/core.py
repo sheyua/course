@@ -36,9 +36,23 @@ def core(args: Namespace) -> None:
     # variant (vanilla or synthesizer) has been chosen.
 
     if args.function == 'pretrain':
+
         assert args.pretrain_corpus_path is not None
         assert args.writing_params_path is not None
 
+        # hyperparameters for pretraining:
+        #  max_epochs = 650
+        #  batch_size = 128
+        #  learning_rate = 6e-3
+        #  lr_decay = True
+        #  warmup_tokens = 512 * 20
+        #  final_tokens = 200 * len(pretrain_dataset) * block_size
+        #  num_workers = 4
+        if args.batch_size != 128:
+            logger.warning(f'use a batch size of {args.batch_size}')
+        final_token = 200 * len(pretrain_dataset) * pretrain_dataset.block_size
+        trainer_config = TrainerConfig(max_epoch=650, batch_size=args.batch_size, learning_rate=6e-3, lr_decay=True,
+                                       warmup_token=512 * 20, final_token=final_token, num_worker=4)
         import ipdb
         ipdb.set_trace()
         assert True
@@ -49,14 +63,7 @@ def core(args: Namespace) -> None:
         # - Goals:
         #     1. Pretrain the model on this corpus
         #     2. Save the resulting model in args.writing_params_path
-        # - Make sure to use the following hyperparameters for pretraining:
-        #     max_epochs=650
-        #     batch_size=128
-        #     learning_rate=6e-3
-        #     lr_decay=True
-        #     warmup_tokens=512*20
-        #     final_tokens=200*len(pretrain_dataset)*block_size
-        #     num_workers=4
+
         raise NotImplementedError
 
     elif args.function == 'finetune':
@@ -104,6 +111,7 @@ def core(args: Namespace) -> None:
 
         from torch import load, tensor, long
         from torch.cuda import is_available, current_device
+        from torch.nn import DataParallel
 
         assert args.output_path is not None
         assert args.reading_params_path is not None
@@ -111,6 +119,7 @@ def core(args: Namespace) -> None:
         # save the device
         if is_available():
             device = current_device()
+            model = DataParallel(model).to(device)
         else:
             device = 'cpu'
         model.load_state_dict(load(args.reading_params_path))
