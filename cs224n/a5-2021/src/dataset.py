@@ -83,7 +83,8 @@ class CharCorruptionDataset(Dataset):
         self.block_size = block_size
         self.vocab_size = vocab_size
         logger.info(f'data has {data_size} characters, {self.vocab_size} unique.')
-        self.data = data.split('\n')
+        self.data = [value.strip() for value in data.split('\n')]
+        self.data = [value for value in self.data if len(value)]
 
     def __len__(self) -> int: return len(self.data)
 
@@ -207,10 +208,9 @@ class CharCorruptionDataset(Dataset):
         num_pad = self.block_size - len(item)
         assert num_pad >= 0
         item = item + self.PAD_CHAR * num_pad
-
         # output
         x, y = item[:-1], item[1:]
-        x = tensor([self.stoi[c] for c in x[:-1]], dtype=long)
+        x = tensor([self.stoi[c] for c in x], dtype=long)
         y = tensor([self.stoi[c] for c in y], dtype=long)
         return x, y
 

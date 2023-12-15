@@ -42,6 +42,7 @@ def make_parser() -> ArgumentParser:
     ans.add_argument('--num-layer', dest='n_layer', default=4, type=int, help='number of layers')
     ans.add_argument('--num-head', dest='n_head', default=8, type=int, help='number of multi-head attention')
     ans.add_argument('--dim-embedding', dest='n_embd', default=256, type=int, help='embedding size')
+    ans.add_argument('--num-worker', dest='num_worker', default=4, type=int, help='number of worker for dataset')
     return ans
 
 

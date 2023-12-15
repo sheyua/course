@@ -9,7 +9,6 @@ from typing import Optional
 from logging import getLogger
 from torch import set_grad_enabled, save
 from torch.cuda import is_available, current_device
-from torch.nn import DataParallel
 from torch.nn.utils import clip_grad_norm_
 from torch.optim import AdamW
 from torch.utils.data import Dataset
@@ -37,7 +36,7 @@ class Trainer(object):
         # take over whatever gpus are on the system
         if is_available():
             self.device = current_device()
-            self.model = DataParallel(self.model).to(self.device)
+            self.model = self.model.to(self.device)
         else:
             self.device = 'cpu'
         logger.info(f'trainer running on device {self.device}')

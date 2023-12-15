@@ -37,6 +37,8 @@ def core(args: Namespace) -> None:
 
     if args.function == 'pretrain':
 
+        from torch import save
+
         assert args.pretrain_corpus_path is not None
         assert args.writing_params_path is not None
 
@@ -52,19 +54,11 @@ def core(args: Namespace) -> None:
             logger.warning(f'use a batch size of {args.batch_size}')
         final_token = 200 * len(pretrain_dataset) * pretrain_dataset.block_size
         trainer_config = TrainerConfig(max_epoch=650, batch_size=args.batch_size, learning_rate=6e-3, lr_decay=True,
-                                       warmup_token=512 * 20, final_token=final_token, num_worker=4)
-        import ipdb
-        ipdb.set_trace()
-        assert True
-        # TODO [part f]:
-        # - Given:
-        #     1. A corpus specified in args.pretrain_corpus_path
-        #     2. An output path args.writing_params_path for the model parameters
-        # - Goals:
-        #     1. Pretrain the model on this corpus
-        #     2. Save the resulting model in args.writing_params_path
-
-        raise NotImplementedError
+                                       warmup_token=512 * 20, final_token=final_token, num_worker=args.num_worker)
+        # make trainer
+        trainer = Trainer(model=model, train_dataset=pretrain_dataset, test_dataset=None, config=trainer_config)
+        trainer.train()
+        save(trainer.model.state_dict(), args.writing_params_path)
 
     elif args.function == 'finetune':
 
@@ -90,7 +84,7 @@ def core(args: Namespace) -> None:
             #  final_tokens = 200 * len(pretrain_dataset) * block_size
             #  num_workers = 4
             trainer_config = TrainerConfig(max_epoch=10, batch_size=args.batch_size, learning_rate=6e-4, lr_decay=True,
-                                           warmup_token=512 * 20, final_token=final_token, num_worker=4)
+                                           warmup_token=512 * 20, final_token=final_token, num_worker=args.num_worker)
         else:
             # hyper-parameters for fine-tuning WITHOUT a pretrained model:
             #  max_epochs = 75
@@ -101,7 +95,7 @@ def core(args: Namespace) -> None:
             #  final_tokens = 200 * len(pretrain_dataset) * block_size
             #  num_workers = 4
             trainer_config = TrainerConfig(max_epoch=75, batch_size=args.batch_size, learning_rate=6e-4, lr_decay=True,
-                                           warmup_token=512 * 20, final_token=final_token, num_worker=4)
+                                           warmup_token=512 * 20, final_token=final_token, num_worker=args.num_worker)
         # make trainer
         trainer = Trainer(model=model, train_dataset=train_dataset, test_dataset=None, config=trainer_config)
         trainer.train()
@@ -111,7 +105,6 @@ def core(args: Namespace) -> None:
 
         from torch import load, tensor, long
         from torch.cuda import is_available, current_device
-        from torch.nn import DataParallel
 
         assert args.output_path is not None
         assert args.reading_params_path is not None
@@ -119,7 +112,7 @@ def core(args: Namespace) -> None:
         # save the device
         if is_available():
             device = current_device()
-            model = DataParallel(model).to(device)
+            model = model.to(device)
         else:
             device = 'cpu'
         model.load_state_dict(load(args.reading_params_path))
