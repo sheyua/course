@@ -40,6 +40,7 @@ class Trainer(object):
             self.model = DataParallel(self.model).to(self.device)
         else:
             self.device = 'cpu'
+        logger.info(f'trainer running on device {self.device}')
 
     def save_checkpoint(self) -> None:
         """
@@ -49,14 +50,6 @@ class Trainer(object):
             model = self.model.module if hasattr(self.model, 'module') else self.model
             logger.info(f'saving {self.config.checkpoint}')
             save(model.state_dict(), self.config.checkpoint)
-
-    def run_epoch(self, optimizer: AdamW, loader: DataLoader, num_tokens: int, epoch: int) -> int:
-        """
-
-        """
-
-        # return back the total token trained
-        return num_tokens
 
     def train(self) -> None:
         """

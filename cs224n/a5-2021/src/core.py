@@ -5,13 +5,15 @@ def core(args: Namespace) -> None:
     """
 
     """
-    from .utils import set_seed
+    from logging import getLogger
     from .dataset import CharCorruptionDataset, NameDataset
     from .config import GPTConfig, TrainerConfig
     from .model import GPT
+    from .utils import set_seed, sample, evaluate_places
     from .trainer import Trainer
 
     set_seed(value=0)
+    logger = getLogger(name=__name__)
     # the pretraining corpus always required because we use it to have the same vocabulary, that is,
     # the same mapping from character to integer, and we build the vocab from the pretraining corpus.
     with open(args.pretrain_corpus_path, 'r') as f:
@@ -37,6 +39,9 @@ def core(args: Namespace) -> None:
         assert args.pretrain_corpus_path is not None
         assert args.writing_params_path is not None
 
+        import ipdb
+        ipdb.set_trace()
+        assert True
         # TODO [part f]:
         # - Given:
         #     1. A corpus specified in args.pretrain_corpus_path
@@ -94,56 +99,48 @@ def core(args: Namespace) -> None:
         trainer = Trainer(model=model, train_dataset=train_dataset, test_dataset=None, config=trainer_config)
         trainer.train()
         save(model.state_dict(), args.writing_params_path)
-        import ipdb
-        ipdb.set_trace()
-        assert True
-
-        # TODO [part c] [part f]:
-        # - Given:
-        #     1. A finetuning corpus specified in args.finetune_corpus_path
-        #     2. A path args.reading_params_path containing pretrained model
-        #         parameters, or None if finetuning without a pretrained model
-        #     3. An output path args.writing_params_path for the model parameters
-        # - Goals:
-        #     1. If args.reading_params_path is specified, load these parameters
-        #         into the model
-        #     2. Finetune the model on this corpus
-        #     3. Save the resulting model in args.writing_params_path
 
     elif args.function == 'evaluate':
 
+        from torch import load, tensor, long
         from torch.cuda import is_available, current_device
 
+        assert args.output_path is not None
+        assert args.reading_params_path is not None
+        assert args.eval_corpus_path is not None
         # save the device
         if is_available():
             device = current_device()
         else:
             device = 'cpu'
-            # keep the block size 128
+        model.load_state_dict(load(args.reading_params_path))
+        logger.info(f'loaded model and use device {device}')
 
-        assert args.outputs_path is not None
-        assert args.reading_params_path is not None
-        assert args.eval_corpus_path is not None
-        model.load_state_dict(torch.load(args.reading_params_path))
-        correct = 0
-        total = 0
-        with open(args.outputs_path, 'w') as fout:
-            predictions = []
-            for line in tqdm(open(args.eval_corpus_path)):
-                x = line.split('\t')[0]
-                x = x + '⁇'
-                x = torch.tensor([pretrain_dataset.stoi[s] for s in x], dtype=torch.long)[None,...].to(device)
-                pred = utils.sample(model, x, 32, sample=False)[0]
-                completion = ''.join([pretrain_dataset.itos[int(i)] for i in pred])
-                pred = completion.split('⁇')[1]
-                predictions.append(pred)
-                fout.write(pred + '\n')
-            total, correct = utils.evaluate_places(args.eval_corpus_path, predictions)
-        if total > 0:
-            print('Correct: {} out of {}: {}%'.format(correct, total, correct/total*100))
+        # evaluate on the eval-corpus
+        with open(args.output_path, 'w') as handler:
+            prediction, y_true = list(), list()
+            with open(args.eval_corpus_path, 'r') as inputs:
+                for index, line in enumerate(inputs.readlines()):
+                    # read line
+                    line = line.strip()
+                    x, y = line.split('\t')
+                    # transform to tensor
+                    x = x + pretrain_dataset.MASK_CHAR
+                    x = tensor([pretrain_dataset.stoi[s] for s in x], dtype=long)
+                    x = x.reshape([1, -1]).to(device)
+                    p = sample(model=model, x=x, steps=32, is_greedy=True).reshape(-1)
+                    completion = ''.join([pretrain_dataset.itos[int(i)] for i in p])
+                    _, pred, *_ = completion.split(pretrain_dataset.MASK_CHAR)
+                    # add to the list
+                    prediction.append(pred)
+                    y_true.append(y)
+                    handler.write(f'{pred}\n')
+        # report
+        total, correct = evaluate_places(y_true=y_true, prediction=prediction)
+        if total:
+            logger.info(f'correct {correct} out of {total}, {correct * 100 / total:.2f}% correct')
         else:
-            print('Predictions written to {}; no targets provided'
-                  .format(args.outputs_path))
+            logger.info(f'predictions written to {args.output_path}, no targets provided')
 
     else:
         raise NotImplementedError

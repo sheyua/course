@@ -32,8 +32,9 @@ def make_parser() -> ArgumentParser:
     text = 'path of the corpus to finetune on'
     ans.add_argument('--finetune-corpus-path', dest='finetune_corpus_path', help=text, default=None)
     text = 'path of the corpus to evaluate on'
-    ans.add_argument('--eval_corpus_path', help=text, default=None)
-    ans.add_argument('--outputs_path', default=None)
+    ans.add_argument('--eval-corpus-path', dest='eval_corpus_path', help=text, default=None)
+    text = 'output of the evaluated answer'
+    ans.add_argument('--output-path', dest='output_path', help=text, default=None)
 
     # keep the default arguments
     ans.add_argument('--block-size', dest='block_size', default=128, type=int, help='training block size')

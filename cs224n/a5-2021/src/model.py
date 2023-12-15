@@ -64,9 +64,6 @@ class GPT(Module):
             module.weight.data.fill_(value=1.0)
         else:
             pass
-    #
-    # def get_block_size(self):
-    #     return self.block_size
 
     def forward(self, inputs: Tensor, target: Optional[Tensor]=None) -> Tuple[Tensor, Optional[Tensor]]:
         """
