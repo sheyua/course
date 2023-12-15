@@ -105,7 +105,7 @@ def core(args: Namespace) -> None:
         # make trainer
         trainer = Trainer(model=model, train_dataset=train_dataset, test_dataset=None, config=trainer_config)
         trainer.train()
-        save(model.state_dict(), args.writing_params_path)
+        save(trainer.model.state_dict(), args.writing_params_path)
 
     elif args.function == 'evaluate':
 
