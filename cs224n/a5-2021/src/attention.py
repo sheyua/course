@@ -109,8 +109,8 @@ class SynthesizerAttention(Module):
         kernel = relu(input=kernel, inplace=False)
         attn = matmul(kernel, self.w2) + self.b2
         attn = self.attn_drop(input=attn)
-        attn = attn.masked_fill(mask=self.mask[:, :, :block_size, :block_size] == 0, value=-inf)
-        attn = softmax(input=attn, dim=3)
+        attn = attn.masked_fill(mask=self.mask[:, :, :block_size, :(self.block_size - 1)] == 0, value=-inf)
+        attn = softmax(input=attn[:, :, :, :block_size], dim=3)
 
         # compute output
         value = self.value(input=inputs).view(batch_size, block_size, self.n_head, head_dim).transpose(dim0=1, dim1=2)
