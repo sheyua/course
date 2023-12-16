@@ -19,22 +19,21 @@ def core(args: Namespace) -> None:
     with open(args.pretrain_corpus_path, 'r') as f:
         pretrain_dataset = CharCorruptionDataset(data=f.read(), block_size=args.block_size)
 
-    # the default hyper-parameters are known to work. use them for both the vanilla and the synthesizer models
-    model_config = GPTConfig(vocab_size=pretrain_dataset.vocab_size, embedding_dim=args.n_embd,
-                             block_size=pretrain_dataset.block_size, n_layer=args.n_layer, n_head=args.n_head)
-
     # part c and g
     if args.variant == 'vanilla':
-        model = GPT(config=model_config)
+        attention_type = 'causal'
     elif args.variant == 'synthesizer':
-        # TODO [part g]: Make some other model here
-        raise NotImplementedError
+        attention_type = 'synthesizer'
     else:
         raise NotImplementedError
+    # the default hyper-parameters are known to work. use them for both the vanilla and the synthesizer models
+    model_config = GPTConfig(vocab_size=pretrain_dataset.vocab_size, embedding_dim=args.n_embd,
+                             block_size=pretrain_dataset.block_size, n_layer=args.n_layer, n_head=args.n_head,
+                             attention_type=attention_type)
+    model = GPT(config=model_config)
 
     # From here on, your code should be identical independent of which
     # variant (vanilla or synthesizer) has been chosen.
-
     if args.function == 'pretrain':
 
         from torch import save
@@ -125,7 +124,10 @@ def core(args: Namespace) -> None:
                 for index, line in enumerate(inputs.readlines()):
                     # read line
                     line = line.strip()
-                    x, y = line.split('\t')
+                    try:
+                        x, y = line.split('\t')
+                    except ValueError:
+                        x, y = line, ''
                     # transform to tensor
                     x = x + pretrain_dataset.MASK_CHAR
                     x = tensor([pretrain_dataset.stoi[s] for s in x], dtype=long)
@@ -135,7 +137,8 @@ def core(args: Namespace) -> None:
                     _, pred, *_ = completion.split(pretrain_dataset.MASK_CHAR)
                     # add to the list
                     prediction.append(pred)
-                    y_true.append(y)
+                    if len(y):
+                        y_true.append(y)
                     handler.write(f'{pred}\n')
         # report
         total, correct = evaluate_places(y_true=y_true, prediction=prediction)

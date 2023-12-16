@@ -2,7 +2,8 @@ class GPTConfig(object):
     """
 
     """
-    def __init__(self, vocab_size: int, embedding_dim: int, block_size: int, n_layer: int, n_head: int) -> None:
+    def __init__(self, vocab_size: int, embedding_dim: int, block_size: int, n_layer: int, n_head: int,
+                 attention_type: str) -> None:
         """
 
         """
@@ -17,6 +18,7 @@ class GPTConfig(object):
         self.resid_pdrop = 0.1
         self.feed_forward_pdrop = 0.1
         self.additive = False
+        self.attention_type = attention_type
 
 
 class GPT1Config(GPTConfig):
@@ -28,7 +30,7 @@ class GPT1Config(GPTConfig):
 
         """
         super(GPT1Config, self).__init__(vocab_size=vocab_size, embedding_dim=768, block_size=block_size,
-                                         n_layer=12, n_head=12)
+                                         n_layer=12, n_head=12, attention_type='causal')
 
 
 class TrainerConfig(object):
