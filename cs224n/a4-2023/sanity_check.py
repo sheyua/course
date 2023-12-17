@@ -122,7 +122,8 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     """ Sanity check for question 1d. 
         Compares student output to that of model with dummy data.
     """
-    from torch import load
+    from numpy import allclose
+    from torch import load, no_grad
 
     location = dirname(abspath(__file__))
     base = f'{location}/sanity_check_en_es_data'
@@ -136,17 +137,24 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     enc_hiddens_target = load(f'{base}/enc_hiddens.pkl')
     dec_init_state_target = load(f'{base}/dec_init_state.pkl')
 
+    from torch.cuda import is_available, current_device
+    if is_available():
+        device = current_device()
+        model.to(device)
+
+    # test
+    with no_grad():
+        enc_hiddens_pred, dec_init_state_pred = model.encode(source_padded=source_padded, source_lengths=source_lengths)
+    if enc_hiddens_target.shape != enc_hiddens_pred.shape:
+        raise ValueError(f'enc_hiddens shape: expect {enc_hiddens_target.shape} found {enc_hiddens_pred.shape}')
+    if not allclose(enc_hiddens_target.numpy(), enc_hiddens_pred.numpy()):
+        raise ValueError(f'enc_hiddens incorrect: expect: {enc_hiddens_target} found {enc_hiddens_pred}')
+    print('enc_hiddens Sanity Checks Passed!')
+
     import ipdb
     ipdb.set_trace()
     assert True
 
-
-    # Test
-    with torch.no_grad():
-        enc_hiddens_pred, dec_init_state_pred = model.encode(source_padded, source_lengths)
-    assert(enc_hiddens_target.shape == enc_hiddens_pred.shape), "enc_hiddens shape is incorrect: it should be:\n {} but is:\n{}".format(enc_hiddens_target.shape, enc_hiddens_pred.shape)
-    assert(np.allclose(enc_hiddens_target.numpy(), enc_hiddens_pred.numpy())), "enc_hiddens is incorrect: it should be:\n {} but is:\n{}".format(enc_hiddens_target, enc_hiddens_pred)
-    print("enc_hiddens Sanity Checks Passed!")
     assert(dec_init_state_target[0].shape == dec_init_state_pred[0].shape), "dec_init_state[0] shape is incorrect: it should be:\n {} but is:\n{}".format(dec_init_state_target[0].shape, dec_init_state_pred[0].shape)
     assert(np.allclose(dec_init_state_target[0].numpy(), dec_init_state_pred[0].numpy())), "dec_init_state[0] is incorrect: it should be:\n {} but is:\n{}".format(dec_init_state_target[0], dec_init_state_pred[0])
     print("dec_init_state[0] Sanity Checks Passed!")
