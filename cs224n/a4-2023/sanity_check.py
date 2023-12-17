@@ -28,6 +28,7 @@ import torch.nn as nn
 import torch.nn.utils
 
 
+from os.path import dirname, abspath
 from vocab import Vocab
 from nmt_model import NMT
 from utils import SentsType
@@ -121,19 +122,24 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     """ Sanity check for question 1d. 
         Compares student output to that of model with dummy data.
     """
-    print('Running Sanity Check for Question 1d: Encode', '-' * 80)
+    from torch import load
+
+    location = dirname(abspath(__file__))
+    base = f'{location}/sanity_check_en_es_data'
+    print('Running Sanity Check for Question 1d: Encode', '-' * 80, sep='\n')
 
     # Configure for Testing
     reinitialize_layers(model=model)
+    source_lengths = [len(s) for s in src_sents]
+    source_padded = model.vocab.src.to_input_tensor(sents=src_sents)
+    # Load Outputs
+    enc_hiddens_target = load(f'{base}/enc_hiddens.pkl')
+    dec_init_state_target = load(f'{base}/dec_init_state.pkl')
+
     import ipdb
     ipdb.set_trace()
     assert True
-    source_lengths = [len(s) for s in src_sents]
-    source_padded = model.vocab.src.to_input_tensor(src_sents, device=model.device)
 
-    # Load Outputs
-    enc_hiddens_target = torch.load('./sanity_check_en_es_data/enc_hiddens.pkl')
-    dec_init_state_target = torch.load('./sanity_check_en_es_data/dec_init_state.pkl')
 
     # Test
     with torch.no_grad():
@@ -233,7 +239,6 @@ def main() -> None:
     """
 
     """
-    from os.path import dirname, abspath
     from utils import autograder_read_corpus, batch_iter
 
     args = docopt(__doc__)

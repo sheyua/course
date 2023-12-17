@@ -10,14 +10,18 @@ Anand Dhoot <anandd@stanford.edu>
 Vera Lin <veralin@stanford.edu>
 Siyan Li <siyanli@stanford.edu>
 """
+from torch import float32
 from torch.nn import Module
 from vocab import Vocab
 
 
 class ModelEmbeddings(Module):
     """
-    Class that converts input words to their embeddings.
+        Class that converts input words to their embeddings.
     """
+    @property
+    def dtype(self) -> type: return float32
+
     def __init__(self, embed_size: int, vocab: Vocab) -> None:
         """
         Init the Embedding layers.
@@ -25,7 +29,6 @@ class ModelEmbeddings(Module):
         @param embed_size: Embedding size (dimensionality)
         @param vocab: Vocabulary object containing src and tgt languages See vocab.py for documentation.
         """
-        from torch import float32
         from torch.nn import Embedding
 
         super(ModelEmbeddings, self).__init__()
@@ -51,9 +54,7 @@ class ModelEmbeddings(Module):
         #     Embedding Layer:
         #         https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding
         self.source = Embedding(num_embeddings=len(vocab.src), embedding_dim=self.embed_size,
-                                padding_idx=src_pad_token_idx, dtype=float32)
+                                padding_idx=src_pad_token_idx, dtype=self.dtype)
         self.target = Embedding(num_embeddings=len(vocab.tgt), embedding_dim=self.embed_size,
-                                padding_idx=tgt_pad_token_idx, dtype=float32)
+                                padding_idx=tgt_pad_token_idx, dtype=self.dtype)
         # END YOUR CODE
-
-

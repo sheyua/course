@@ -9,14 +9,6 @@ Sahil Chopra <schopra8@stanford.edu>
 Vera Lin <veralin@stanford.edu>
 Siyan Li <siyanli@stanford.edu>
 """
-
-import math
-
-
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import nltk
 import sentencepiece as spm
 nltk.download('punkt')
@@ -25,27 +17,26 @@ nltk.download('punkt')
 from typing import List, Union, Tuple, Generator
 
 
-SentType = Union[List[int], List[str]]
+SentType = List[str]
 SentsType = List[SentType]
+ISentType = List[int]
+ISentsType = List[List[int]]
 BatchType = Generator[Tuple[SentsType, SentsType], None, None]
 
 
-def pad_sents(sents, pad_token):
+def pad_sents(sents: Union[SentsType, ISentsType], pad_token: Union[str, int]) -> Union[SentsType, ISentsType]:
     """ Pad list of sentences according to the longest sentence in the batch.
         The paddings should be at the end of each sentence.
-    @param sents (list[list[str]]): list of sentences, where each sentence
-                                    is represented as a list of words
-    @param pad_token (str): padding token
+    @param sents: list of sentences, where each sentence is represented as a list of words
+    @param pad_token: padding token
     @returns sents_padded (list[list[str]]): list of sentences where sentences shorter
         than the max length sentence are padded out with the pad_token, such that
         each sentences in the batch now has equal length.
     """
-    sents_padded = []
-
-    ### YOUR CODE HERE (~6 Lines)
-
-
-    ### END YOUR CODE
+    # YOUR CODE HERE (~6 Lines)
+    size = max(len(sent) for sent in sents)
+    sents_padded = [sent + [pad_token] * (size - len(sent)) for sent in sents]
+    # END YOUR CODE
 
     return sents_padded
 

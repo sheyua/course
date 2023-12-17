@@ -25,16 +25,19 @@ from docopt import docopt
 from itertools import chain
 import json
 import torch
-from typing import List
-from utils import read_corpus, pad_sents
 import sentencepiece as spm
+
+
+from torch import Tensor, tensor, long
+from typing import Union, Optional, Dict
+from utils import SentType, SentsType, ISentType, ISentsType, pad_sents
 
 
 class VocabEntry(object):
     """ Vocabulary Entry, i.e. structure containing either
     src or tgt language terms.
     """
-    def __init__(self, word2id=None):
+    def __init__(self, word2id: Optional[Dict[str, int]]=None) -> None:
         """ Init VocabEntry Instance.
         @param word2id (dict): dictionary mapping words 2 indices
         """
@@ -43,13 +46,13 @@ class VocabEntry(object):
         else:
             self.word2id = dict()
             self.word2id['<pad>'] = 0   # Pad Token
-            self.word2id['<s>'] = 1 # Start Token
+            self.word2id['<s>'] = 1     # Start Token
             self.word2id['</s>'] = 2    # End Token
             self.word2id['<unk>'] = 3   # Unknown Token
         self.unk_id = self.word2id['<unk>']
         self.id2word = {v: k for k, v in self.word2id.items()}
 
-    def __getitem__(self, word):
+    def __getitem__(self, word: str) -> int:
         """ Retrieve word's index. Return the index for the unk
         token if the word is out of vocabulary.
         @param word (str): word to look up.
@@ -57,7 +60,7 @@ class VocabEntry(object):
         """
         return self.word2id.get(word, self.unk_id)
 
-    def __contains__(self, word):
+    def __contains__(self, word: str) -> bool:
         """ Check if word is captured by VocabEntry.
         @param word (str): word to look up
         @returns contains (bool): whether word is contained    
@@ -69,29 +72,29 @@ class VocabEntry(object):
         """
         raise ValueError('vocabulary is readonly')
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Compute number of words in VocabEntry.
         @returns len (int): number of words in VocabEntry
         """
         return len(self.word2id)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """ Representation of VocabEntry to be used
         when printing the object.
         """
         return 'Vocabulary[size=%d]' % len(self)
 
-    def id2word(self, wid):
+    def id2word(self, wid: int) -> str:
         """ Return mapping of index to word.
-        @param wid (int): word index
-        @returns word (str): word corresponding to index
+        @param wid: word index
+        @returns word: word corresponding to index
         """
         return self.id2word[wid]
 
-    def add(self, word):
+    def add(self, word: str) -> int:
         """ Add word to VocabEntry, if it is previously unseen.
-        @param word (str): word to add to VocabEntry
-        @return index (int): index that the word has been assigned
+        @param word: word to add to VocabEntry
+        @return index: index that the word has been assigned
         """
         if word not in self:
             wid = self.word2id[word] = len(self)
@@ -100,37 +103,43 @@ class VocabEntry(object):
         else:
             return self[word]
 
-    def words2indices(self, sents):
+    def words2indices(self, sents: Union[SentsType, SentType]) -> Union[ISentsType, ISentType]:
         """ Convert list of words or list of sentences of words
         into list or list of list of indices.
-        @param sents (list[str] or list[list[str]]): sentence(s) in words
-        @return word_ids (list[int] or list[list[int]]): sentence(s) in indices
+        @param sents: sentence(s) in words
+        @return word_ids: sentence(s) in indices
         """
-        if type(sents[0]) == list:
+        if len(sents) == 0:
+            return list()
+        elif isinstance(sents[0], list):
             return [[self[w] for w in s] for s in sents]
+        elif isinstance(sents[0], str):
+            ans = list()
+            for w in sents:
+                assert isinstance(w, str)
+                ans.append(self[w])
+            return ans
         else:
-            return [self[w] for w in sents]
+            raise NotImplementedError
 
-    def indices2words(self, word_ids):
+    def indices2words(self, word_ids: ISentType) -> SentType:
         """ Convert list of indices into words.
-        @param word_ids (list[int]): list of word ids
-        @return sents (list[str]): list of words
+        @param word_ids: list of word ids
+        @return sents: list of words
         """
         return [self.id2word[w_id] for w_id in word_ids]
 
-    def to_input_tensor(self, sents: List[List[str]], device: torch.device) -> torch.Tensor:
+    def to_input_tensor(self, sents: SentsType) -> Tensor:
         """ Convert list of sentences (words) into tensor with necessary padding for 
         shorter sentences.
 
-        @param sents (List[List[str]]): list of sentences (words)
-        @param device: device on which to load the tesnor, i.e. CPU or GPU
-
+        @param sents: list of sentences (words)
         @returns sents_var: tensor of (max_sentence_length, batch_size)
         """
-        word_ids = self.words2indices(sents)
-        sents_t = pad_sents(word_ids, self['<pad>'])
-        sents_var = torch.tensor(sents_t, dtype=torch.long, device=device)
-        return torch.t(sents_var)
+        word_ids = self.words2indices(sents=sents)
+        sents_t = pad_sents(sents=word_ids, pad_token=self['<pad>'])
+        sents_var = tensor(data=sents_t, dtype=long)
+        return sents_var.transpose(dim0=0, dim1=1)
 
     @staticmethod
     def from_corpus(corpus, size, freq_cutoff=2):

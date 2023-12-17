@@ -24,7 +24,7 @@ from model_embeddings import ModelEmbeddings
 
 
 
-
+from torch import float32
 from torch.nn import Module
 from collections import namedtuple
 from vocab import Vocab
@@ -39,6 +39,8 @@ class NMT(Module):
         - Unidirection LSTM Decoder
         - Global Attention Model (Luong, et al. 2015)
     """
+    @property
+    def dtype(self) -> type: return float32
 
     def __init__(self, embed_size: int, hidden_size: int, vocab: Vocab, dropout_rate: float=0.2) -> None:
         """ Init NMT Model.
@@ -48,54 +50,39 @@ class NMT(Module):
         @param vocab: Vocabulary object containing src and tgt languages See vocab.py for documentation.
         @param dropout_rate: Dropout probability, for attention
         """
+        from torch.nn import Conv1d, LSTM, LSTMCell, Linear, Dropout
+
         super(NMT, self).__init__()
         self.model_embeddings = ModelEmbeddings(embed_size=embed_size, vocab=vocab)
-        import ipdb
-        ipdb.set_trace()
-        assert True
         self.hidden_size = hidden_size
         self.dropout_rate = dropout_rate
         self.vocab = vocab
-
-        # default values
-        self.encoder = None
-        self.decoder = None
-        self.h_projection = None
-        self.c_projection = None
-        self.att_projection = None
-        self.combined_output_projection = None
-        self.target_vocab_projection = None
-        self.dropout = None
         # For sanity check only, not relevant to implementation
         self.gen_sanity_check = False
         self.counter = 0
 
-        ### YOUR CODE HERE (~9 Lines)
-        ### TODO - Initialize the following variables IN THIS ORDER:
-        ###     self.post_embed_cnn (Conv1d layer with kernel size 2, input and output channels = embed_size,
-        ###         padding = same to preserve output shape )
-        ###     self.encoder (Bidirectional LSTM with bias)
-        ###     self.decoder (LSTM Cell with bias)
-        ###     self.h_projection (Linear Layer with no bias), called W_{h} in the PDF.
-        ###     self.c_projection (Linear Layer with no bias), called W_{c} in the PDF.
-        ###     self.att_projection (Linear Layer with no bias), called W_{attProj} in the PDF.
-        ###     self.combined_output_projection (Linear Layer with no bias), called W_{u} in the PDF.
-        ###     self.target_vocab_projection (Linear Layer with no bias), called W_{vocab} in the PDF.
-        ###     self.dropout (Dropout Layer)
-        ###
-        ### Use the following docs to properly initialize these variables:
-        ###     LSTM:
-        ###         https://pytorch.org/docs/stable/nn.html#torch.nn.LSTM
-        ###     LSTM Cell:
-        ###         https://pytorch.org/docs/stable/nn.html#torch.nn.LSTMCell
-        ###     Linear Layer:
-        ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Linear
-        ###     Dropout Layer:
-        ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
-        ###     Conv1D Layer:
-        ###         https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html
-
-        ### END YOUR CODE
+        # YOUR CODE HERE (~9 Lines)
+        #     self.post_embed_cnn (Conv1d layer with kernel size 2, input and output channels = embed_size,
+        #         padding = same to preserve output shape )
+        #     self.encoder (Bidirectional LSTM with bias)
+        #     self.decoder (LSTM Cell with bias)
+        #     self.h_projection (Linear Layer with no bias), called W_{h} in the PDF.
+        #     self.c_projection (Linear Layer with no bias), called W_{c} in the PDF.
+        #     self.att_projection (Linear Layer with no bias), called W_{attProj} in the PDF.
+        #     self.combined_output_projection (Linear Layer with no bias), called W_{u} in the PDF.
+        #     self.target_vocab_projection (Linear Layer with no bias), called W_{vocab} in the PDF.
+        #     self.dropout (Dropout Layer)
+        e, h, v = embed_size, self.hidden_size, len(self.vocab.tgt)
+        self.post_embed_cnn = Conv1d(in_channels=e, out_channels=e, kernel_size=2, padding='same')
+        self.encoder = LSTM(input_size=e, hidden_size=h, bias=True, bidirectional=True, dtype=self.dtype)
+        self.decoder = LSTMCell(input_size=e + h, hidden_size=h, bias=True, dtype=self.dtype)
+        self.h_projection = Linear(in_features=2 * h, out_features=h, bias=False, dtype=self.dtype)
+        self.c_projection = Linear(in_features=2 * h, out_features=h, bias=False, dtype=self.dtype)
+        self.att_projection = Linear(in_features=2 * h, out_features=h, bias=False, dtype=self.dtype)
+        self.combined_output_projection = Linear(in_features=3 * h, out_features=h, bias=False, dtype=self.dtype)
+        self.dropout = Dropout(p=self.dropout_rate, inplace=False)
+        self.target_vocab_projection = Linear(in_features=h, out_features=v, bias=False, dtype=self.dtype)
+        # END YOUR CODE
 
     def forward(self, source: List[List[str]], target: List[List[str]]) -> torch.Tensor:
         """ Take a mini-batch of source and target sentences, compute the log-likelihood of
@@ -466,11 +453,12 @@ class NMT(Module):
 
         return completed_hypotheses
 
-    @property
-    def device(self) -> torch.device:
-        """ Determine which device to place the Tensors upon, CPU or GPU.
-        """
-        return self.model_embeddings.source.weight.device
+    #
+    # @property
+    # def device(self) -> torch.device:
+    #     """ Determine which device to place the Tensors upon, CPU or GPU.
+    #     """
+    #     return self.model_embeddings.source.weight.device
 
     @staticmethod
     def load(model_path: str):
