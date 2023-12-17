@@ -9,7 +9,7 @@ Sahil Chopra <schopra8@stanford.edu>
 Vera Lin <veralin@stanford.edu>
 Siyan Li <siyanli@stanford.edu>
 """
-from collections import namedtuple
+
 import sys
 from typing import List, Tuple, Dict, Set, Union
 import torch
@@ -20,27 +20,39 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
 from model_embeddings import ModelEmbeddings
 
+
+
+
+
+
+from torch.nn import Module
+from collections import namedtuple
+from vocab import Vocab
+
+
 Hypothesis = namedtuple('Hypothesis', ['value', 'score'])
 
 
-class NMT(nn.Module):
+class NMT(Module):
     """ Simple Neural Machine Translation Model:
         - Bidrectional LSTM Encoder
         - Unidirection LSTM Decoder
         - Global Attention Model (Luong, et al. 2015)
     """
 
-    def __init__(self, embed_size, hidden_size, vocab, dropout_rate=0.2):
+    def __init__(self, embed_size: int, hidden_size: int, vocab: Vocab, dropout_rate: float=0.2) -> None:
         """ Init NMT Model.
 
-        @param embed_size (int): Embedding size (dimensionality)
-        @param hidden_size (int): Hidden Size, the size of hidden states (dimensionality)
-        @param vocab (Vocab): Vocabulary object containing src and tgt languages
-                              See vocab.py for documentation.
-        @param dropout_rate (float): Dropout probability, for attention
+        @param embed_size: Embedding size (dimensionality)
+        @param hidden_size: Hidden Size, the size of hidden states (dimensionality)
+        @param vocab: Vocabulary object containing src and tgt languages See vocab.py for documentation.
+        @param dropout_rate: Dropout probability, for attention
         """
         super(NMT, self).__init__()
-        self.model_embeddings = ModelEmbeddings(embed_size, vocab)
+        self.model_embeddings = ModelEmbeddings(embed_size=embed_size, vocab=vocab)
+        import ipdb
+        ipdb.set_trace()
+        assert True
         self.hidden_size = hidden_size
         self.dropout_rate = dropout_rate
         self.vocab = vocab

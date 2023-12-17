@@ -22,30 +22,36 @@ import sys
 import numpy as np
 
 from docopt import docopt
-from utils import batch_iter
-import nltk
-from utils import autograder_read_corpus
-from vocab import Vocab, VocabEntry
-
-from nmt_model import NMT
-
 
 import torch
 import torch.nn as nn
 import torch.nn.utils
 
-#----------
+
+from vocab import Vocab
+from nmt_model import NMT
+from utils import SentsType
+
+
+# ----------
 # CONSTANTS
-#----------
+# ----------
 BATCH_SIZE = 5
 EMBED_SIZE = 3
 HIDDEN_SIZE = 2
 DROPOUT_RATE = 0.0
 
-def reinitialize_layers(model):
-    """ Reinitialize the Layer Weights for Sanity Checks.
+
+def reinitialize_layers(model: NMT) -> None:
     """
-    def init_weights(m):
+        Reinitialize the Layer Weights for Sanity Checks.
+    """
+    from torch.nn import Module, Linear, Embedding, Conv1d, Dropout, LSTM, LSTMCell
+
+    def init_weights(m: Module) -> None:
+        """
+
+        """
         if type(m) == nn.Linear:
             m.weight.data.fill_(0.3)
             if m.bias is not None:
@@ -110,15 +116,18 @@ def generate_outputs(model, source, target, vocab):
 
     model.gen_sanity_check = False
 
-def question_1d_sanity_check(model, src_sents, tgt_sents, vocab):
+
+def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     """ Sanity check for question 1d. 
         Compares student output to that of model with dummy data.
     """
-    print("Running Sanity Check for Question 1d: Encode")
-    print ("-"*80)
+    print('Running Sanity Check for Question 1d: Encode', '-' * 80)
 
     # Configure for Testing
-    reinitialize_layers(model)
+    reinitialize_layers(model=model)
+    import ipdb
+    ipdb.set_trace()
+    assert True
     source_lengths = [len(s) for s in src_sents]
     source_padded = model.vocab.src.to_input_tensor(src_sents, device=model.device)
 
@@ -220,15 +229,18 @@ def question_1f_sanity_check(model, src_sents, tgt_sents, vocab):
     print ("-"*80)
 
 
-
-def main():
-    """ Main func.
+def main() -> None:
     """
+
+    """
+    from os.path import dirname, abspath
+    from utils import autograder_read_corpus, batch_iter
+
     args = docopt(__doc__)
+    location = dirname(abspath(__file__))
 
     # Check Python & PyTorch Versions
-    assert (sys.version_info >= (3, 5)), "Please update your installation of Python to version >= 3.5."
-    assert(torch.__version__ >= "1.6.0"), "Please update your installation of PyTorch >= 1.6.0. You have version {}.".format(torch.__version__)
+    assert sys.version_info >= (3, 5) and torch.__version__ >= "1.6.0"
 
     # Seed the Random Number Generators
     seed = 1234
@@ -237,25 +249,22 @@ def main():
     np.random.seed(seed * 13 // 7)
 
     # Load training data & vocabulary
-    train_data_src = autograder_read_corpus('./sanity_check_en_es_data/train_sanity_check.es', 'src')
-    train_data_tgt = autograder_read_corpus('./sanity_check_en_es_data/train_sanity_check.en', 'tgt')
+    base = f'{location}/sanity_check_en_es_data'
+    train_data_src = autograder_read_corpus(file_path=f'{base}/train_sanity_check.es', source='src')
+    train_data_tgt = autograder_read_corpus(file_path=f'{base}/train_sanity_check.en', source='tgt')
     train_data = list(zip(train_data_src, train_data_tgt))
-
-    for src_sents, tgt_sents in batch_iter(train_data, batch_size=BATCH_SIZE, shuffle=True):
-        src_sents = src_sents
-        tgt_sents = tgt_sents
-        break
-    vocab = Vocab.load('./sanity_check_en_es_data/vocab_sanity_check.json') 
+    src_sents, tgt_sents = next(batch_iter(data=train_data, batch_size=BATCH_SIZE, shuffle=True))
 
     # Create NMT Model
-    model = NMT(
-        embed_size=EMBED_SIZE,
-        hidden_size=HIDDEN_SIZE,
-        dropout_rate=DROPOUT_RATE,
-        vocab=vocab)
+    vocab = Vocab.load(f'{base}/vocab_sanity_check.json')
+    model = NMT(embed_size=EMBED_SIZE, hidden_size=HIDDEN_SIZE, vocab=vocab, dropout_rate=DROPOUT_RATE)
 
     if args['1d']:
-        question_1d_sanity_check(model, src_sents, tgt_sents, vocab)
+        question_1d_sanity_check(model=model, src_sents=src_sents)
+
+
+    # TODO start here
+
     elif args['1e']:
         question_1e_sanity_check(model, src_sents, tgt_sents, vocab)
     elif args['1f']:

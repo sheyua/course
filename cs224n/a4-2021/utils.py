@@ -75,7 +75,7 @@ def autograder_read_corpus(file_path: str, source: str) -> SentsType:
     return data
 
 
-def batch_iter(data: List[Tuple[SentType, SentsType]], batch_size: int, shuffle: bool=False) -> BatchType:
+def batch_iter(data: List[Tuple[SentType, SentType]], batch_size: int, shuffle: bool=False) -> BatchType:
     """ Yield batches of source and target sentences reverse sorted by length (largest to smallest).
     @param data: list of tuples containing source and target sentence
     @param batch_size: batch size

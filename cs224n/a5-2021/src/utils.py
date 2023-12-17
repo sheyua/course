@@ -22,8 +22,12 @@ def set_seed(value: int) -> None:
     manual_seed_all(value)
 
 
-def top_k_logits(logits, k):
-    v, ix = torch.topk(logits, k)
+def top_k_logits(logits: Tensor, k: int) -> Tensor:
+    """
+
+    """
+    from torch import topk
+    v, ix = topk(logits, k)
     out = logits.clone()
     out[out < v[:, [-1]]] = -float('Inf')
     return out
@@ -52,10 +56,7 @@ def sample(model: GPT, x: Tensor, steps: int, temperature: float=1.0, is_greedy:
         logits = logits[:, -1, :] / temperature
         # optionally crop probabilities to only the top k options
         if top_k is not None:
-            import ipdb
-            ipdb.set_trace()
-            assert True
-            logits = top_k_logits(logits, top_k)
+            logits = top_k_logits(logits=logits, k=top_k)
         # apply softmax to convert to probabilities
         prob = softmax(logits, dim=1)
         # sample from the distribution or take the most likely
