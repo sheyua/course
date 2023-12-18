@@ -47,75 +47,31 @@ def reinitialize_layers(model: NMT) -> None:
     """
         Reinitialize the Layer Weights for Sanity Checks.
     """
+    from torch import no_grad
     from torch.nn import Module, Linear, Embedding, Conv1d, Dropout, LSTM, LSTMCell
 
     def init_weights(m: Module) -> None:
         """
 
         """
-        if type(m) == nn.Linear:
+        if isinstance(m, Linear):
             m.weight.data.fill_(0.3)
             if m.bias is not None:
                 m.bias.data.fill_(0.1)
-        elif type(m) == nn.Embedding:
+        elif isinstance(m, Embedding):
             m.weight.data.fill_(0.15)
-        elif type(m) == nn.Conv1d:
+        elif isinstance(m, Conv1d):
             m.weight.data.fill_(0.15)
-        elif type(m) == nn.Dropout:
+        elif isinstance(m, Dropout):
             nn.Dropout(DROPOUT_RATE)
-        elif type(m) == nn.LSTM:
+        elif isinstance(m, LSTM):
             for param in m.state_dict():
                 getattr(m, param).data.fill_(0.1)
-        elif type(m) == nn.LSTMCell:
+        elif isinstance(m, LSTMCell):
             for param in m.state_dict():
                 getattr(m, param).data.fill_(0.1)
-    with torch.no_grad():
+    with no_grad():
         model.apply(init_weights)
-
-
-def generate_outputs(model, source, target, vocab):
-    """ Generate outputs.
-    """
-    print ("-"*80)
-    print("Generating Comparison Outputs")
-    reinitialize_layers(model)
-    model.gen_sanity_check = True
-    model.counter = 0
-
-    # Compute sentence lengths
-    source_lengths = [len(s) for s in source]
-
-    # Convert list of lists into tensors
-    source_padded = model.vocab.src.to_input_tensor(source, device=model.device)
-    target_padded = model.vocab.tgt.to_input_tensor(target, device=model.device)
-
-    # Run the model forward
-    with torch.no_grad():
-        enc_hiddens, dec_init_state = model.encode(source_padded, source_lengths)
-        enc_masks = model.generate_sent_masks(enc_hiddens, source_lengths)
-        combined_outputs = model.decode(enc_hiddens, enc_masks, dec_init_state, target_padded)
-
-    # Save Tensors to disk
-    torch.save(enc_hiddens, './sanity_check_en_es_data/enc_hiddens.pkl')
-    torch.save(dec_init_state, './sanity_check_en_es_data/dec_init_state.pkl') 
-    torch.save(enc_masks, './sanity_check_en_es_data/enc_masks.pkl')
-    torch.save(combined_outputs, './sanity_check_en_es_data/combined_outputs.pkl')
-    torch.save(target_padded, './sanity_check_en_es_data/target_padded.pkl')
-
-    # 1f
-    # Inputs
-    Ybar_t = torch.load('./sanity_check_en_es_data/Ybar_t.pkl')
-    enc_hiddens_proj = torch.load('./sanity_check_en_es_data/enc_hiddens_proj.pkl')
-    reinitialize_layers(model)
-    # Run Tests
-    with torch.no_grad():
-        dec_state_target, o_t_target, e_t_target = model.step(Ybar_t, dec_init_state, enc_hiddens, enc_hiddens_proj,
-                                                        enc_masks)
-    torch.save(dec_state_target, './sanity_check_en_es_data/dec_state.pkl')
-    torch.save(o_t_target, './sanity_check_en_es_data/o_t.pkl')
-    torch.save(e_t_target, './sanity_check_en_es_data/e_t.pkl')
-
-    model.gen_sanity_check = False
 
 
 def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
@@ -127,7 +83,7 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
 
     location = dirname(abspath(__file__))
     base = f'{location}/sanity_check_en_es_data'
-    print('Running Sanity Check for Question 1d: Encode', '-' * 80, sep='\n')
+    print('-' * 80, 'Running Sanity Check for Question 1d: Encode', '-' * 80, sep='\n')
 
     # Configure for Testing
     reinitialize_layers(model=model)
@@ -145,64 +101,76 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     # test
     with no_grad():
         enc_hiddens_pred, dec_init_state_pred = model.encode(source_padded=source_padded, source_lengths=source_lengths)
-    if enc_hiddens_target.shape != enc_hiddens_pred.shape:
-        raise ValueError(f'enc_hiddens shape: expect {enc_hiddens_target.shape} found {enc_hiddens_pred.shape}')
-    if not allclose(enc_hiddens_target.numpy(), enc_hiddens_pred.numpy()):
-        raise ValueError(f'enc_hiddens incorrect: expect: {enc_hiddens_target} found {enc_hiddens_pred}')
+    target, pred = enc_hiddens_target, enc_hiddens_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'enc_hiddens shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.numpy()):
+        raise ValueError(f'enc_hiddens incorrect: expect: {target} found {pred}')
     print('enc_hiddens Sanity Checks Passed!')
 
-    import ipdb
-    ipdb.set_trace()
-    assert True
+    target, *_ = dec_init_state_target
+    pred, *_ = dec_init_state_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'dec_init_state[0] shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.numpy()):
+        raise ValueError(f'dec_init_state[0] incorrect: expect: {target} found {pred}')
+    print('dec_init_state[0] Sanity Checks Passed!')
 
-    assert(dec_init_state_target[0].shape == dec_init_state_pred[0].shape), "dec_init_state[0] shape is incorrect: it should be:\n {} but is:\n{}".format(dec_init_state_target[0].shape, dec_init_state_pred[0].shape)
-    assert(np.allclose(dec_init_state_target[0].numpy(), dec_init_state_pred[0].numpy())), "dec_init_state[0] is incorrect: it should be:\n {} but is:\n{}".format(dec_init_state_target[0], dec_init_state_pred[0])
-    print("dec_init_state[0] Sanity Checks Passed!")
-    assert(dec_init_state_target[1].shape == dec_init_state_pred[1].shape), "dec_init_state[1] shape is incorrect: it should be:\n {} but is:\n{}".format(dec_init_state_target[1].shape, dec_init_state_pred[1].shape) 
-    assert(np.allclose(dec_init_state_target[1].numpy(), dec_init_state_pred[1].numpy())), "dec_init_state[1] is incorrect: it should be:\n {} but is:\n{}".format(dec_init_state_target[1], dec_init_state_pred[1])
-    print("dec_init_state[1] Sanity Checks Passed!")
-    print ("-"*80)
-    print("All Sanity Checks Passed for Question 1d: Encode!")
-    print ("-"*80)
+    *_, target = dec_init_state_target
+    *_, pred = dec_init_state_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'dec_init_state[1] shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.numpy()):
+        raise ValueError(f'dec_init_state[1] incorrect: expect: {target} found {pred}')
+    print('dec_init_state[1] Sanity Checks Passed!')
+
+    print('-' * 80, 'All Sanity Checks Passed for Question 1d: Encode!', '-' * 80, sep='\n')
 
 
-def question_1e_sanity_check(model, src_sents, tgt_sents, vocab):
+def question_1e_sanity_check(model: NMT) -> None:
     """ Sanity check for question 1e. 
         Compares student output to that of model with dummy data.
     """
-    print ("-"*80)
-    print("Running Sanity Check for Question 1e: Decode")
-    print ("-"*80)
+    from numpy import allclose
+    from torch import load, no_grad
+
+    location = dirname(abspath(__file__))
+    base = f'{location}/sanity_check_en_es_data'
+    print('-' * 80, 'Running Sanity Check for Question 1e: Decode', '-' * 80, sep='\n')
 
     # Load Inputs
-    dec_init_state = torch.load('./sanity_check_en_es_data/dec_init_state.pkl')
-    enc_hiddens = torch.load('./sanity_check_en_es_data/enc_hiddens.pkl')
-    enc_masks = torch.load('./sanity_check_en_es_data/enc_masks.pkl')
-    target_padded = torch.load('./sanity_check_en_es_data/target_padded.pkl')
+    dec_init_state = load(f'{base}/dec_init_state.pkl')
+    enc_hiddens = load(f'{base}/enc_hiddens.pkl')
+    enc_masks = load(f'{base}/enc_masks.pkl')
+    target_padded = load(f'{base}/target_padded.pkl')
 
     # Load Outputs
-    combined_outputs_target = torch.load('./sanity_check_en_es_data/combined_outputs.pkl')
+    combined_outputs_target = load(f'{base}/combined_outputs.pkl')
     print(combined_outputs_target.shape)
 
     # Configure for Testing
     reinitialize_layers(model)
     COUNTER = [0]
+
     def stepFunction(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks):
-       dec_state = torch.load('./sanity_check_en_es_data/step_dec_state_{}.pkl'.format(COUNTER[0]))
-       o_t = torch.load('./sanity_check_en_es_data/step_o_t_{}.pkl'.format(COUNTER[0]))
-       COUNTER[0]+=1
-       return dec_state, o_t, None
+        dec_state = load(f'{base}/step_dec_state_{COUNTER[0]}.pkl')
+        o_t = load(f'{base}/step_o_t_{COUNTER[0]}.pkl')
+        COUNTER[0] += 1
+        return dec_state, o_t, None
     model.step = stepFunction
 
     # Run Tests
-    with torch.no_grad():
-        combined_outputs_pred = model.decode(enc_hiddens, enc_masks, dec_init_state, target_padded)
-    assert(combined_outputs_target.shape == combined_outputs_pred.shape), "combined_outputs shape is incorrect: it should be:\n {} but is:\n{}".format(combined_outputs_target.shape, combined_outputs_pred.shape)
-    assert(np.allclose(combined_outputs_pred.numpy(), combined_outputs_target.numpy())), "combined_outputs is incorrect: it should be:\n {} but is:\n{}".format(combined_outputs_target, combined_outputs_pred)
-    print("combined_outputs Sanity Checks Passed!")
-    print ("-"*80)
-    print("All Sanity Checks Passed for Question 1e: Decode!")
-    print ("-"*80)
+    with no_grad():
+        combined_outputs_pred = model.decode(enc_hiddens=enc_hiddens, enc_masks=enc_masks,
+                                             dec_init_state=dec_init_state, target_padded=target_padded)
+    target, pred = combined_outputs_target, combined_outputs_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'combined_outputs shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.numpy()):
+        raise ValueError(f'combined_outputs incorrect: expect {target} found {pred}')
+
+    print('-' * 80, 'All Sanity Checks Passed for Question 1e: Decode!', '-' * 80, sep='\n')
+
 
 def question_1f_sanity_check(model, src_sents, tgt_sents, vocab):
     """ Sanity check for question 1f. 
@@ -274,20 +242,62 @@ def main() -> None:
 
     if args['1d']:
         question_1d_sanity_check(model=model, src_sents=src_sents)
-
+    elif args['1e']:
+        question_1e_sanity_check(model=model)
 
     # TODO start here
 
-    elif args['1e']:
-        question_1e_sanity_check(model, src_sents, tgt_sents, vocab)
     elif args['1f']:
         question_1f_sanity_check(model, src_sents, tgt_sents, vocab)
-    elif args['overwrite_output_for_sanity_check']:
-        generate_outputs(model, src_sents, tgt_sents, vocab)
     else:
         raise RuntimeError('invalid run mode')
 
 
 if __name__ == '__main__':
     main()
-    
+
+
+#
+# def generate_outputs(model, source, target, vocab):
+#     """ Generate outputs.
+#     """
+#     print ("-"*80)
+#     print("Generating Comparison Outputs")
+#     reinitialize_layers(model)
+#     model.gen_sanity_check = True
+#     model.counter = 0
+#
+#     # Compute sentence lengths
+#     source_lengths = [len(s) for s in source]
+#
+#     # Convert list of lists into tensors
+#     source_padded = model.vocab.src.to_input_tensor(source, device=model.device)
+#     target_padded = model.vocab.tgt.to_input_tensor(target, device=model.device)
+#
+#     # Run the model forward
+#     with torch.no_grad():
+#         enc_hiddens, dec_init_state = model.encode(source_padded, source_lengths)
+#         enc_masks = model.generate_sent_masks(enc_hiddens, source_lengths)
+#         combined_outputs = model.decode(enc_hiddens, enc_masks, dec_init_state, target_padded)
+#
+#     # Save Tensors to disk
+#     torch.save(enc_hiddens, './sanity_check_en_es_data/enc_hiddens.pkl')
+#     torch.save(dec_init_state, './sanity_check_en_es_data/dec_init_state.pkl')
+#     torch.save(enc_masks, './sanity_check_en_es_data/enc_masks.pkl')
+#     torch.save(combined_outputs, './sanity_check_en_es_data/combined_outputs.pkl')
+#     torch.save(target_padded, './sanity_check_en_es_data/target_padded.pkl')
+#
+#     # 1f
+#     # Inputs
+#     Ybar_t = torch.load('./sanity_check_en_es_data/Ybar_t.pkl')
+#     enc_hiddens_proj = torch.load('./sanity_check_en_es_data/enc_hiddens_proj.pkl')
+#     reinitialize_layers(model)
+#     # Run Tests
+#     with torch.no_grad():
+#         dec_state_target, o_t_target, e_t_target = model.step(Ybar_t, dec_init_state, enc_hiddens, enc_hiddens_proj,
+#                                                         enc_masks)
+#     torch.save(dec_state_target, './sanity_check_en_es_data/dec_state.pkl')
+#     torch.save(o_t_target, './sanity_check_en_es_data/o_t.pkl')
+#     torch.save(e_t_target, './sanity_check_en_es_data/e_t.pkl')
+#
+#     model.gen_sanity_check = False
