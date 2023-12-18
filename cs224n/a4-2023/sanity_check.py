@@ -212,9 +212,11 @@ def question_1f_sanity_check(model: NMT) -> None:
     if is_available():
         device = current_device()
         model.to(device)
+        Ybar_t = Ybar_t.to(device)
+        dec_init_state = [value.to(device) for value in dec_init_state]
         enc_hiddens = enc_hiddens.to(device)
+        enc_hiddens_proj = enc_hiddens_proj.to(device)
         enc_masks = enc_masks.to(device)
-        dec_init_state = (value.to(device) for value in dec_init_state)
 
     # Run Tests
     with no_grad():
