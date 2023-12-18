@@ -279,8 +279,8 @@ class NMT(Module):
                       outside of this function. We are simply returning this value so that we can sanity check your
                       implementation.
         """
-        from torch import bmm, cat
-        from torch.nn.functional import softmax, tanh
+        from torch import bmm, cat, tanh
+        from torch.nn.functional import softmax
 
         # combined_output = None
 
@@ -298,12 +298,7 @@ class NMT(Module):
         #       - When using the squeeze() function make sure to specify the dimension you want to squeeze
         #           over. Otherwise, you will remove the batch dimension accidentally, if batch_size = 1.
         batch_size = Ybar_t.size(0)
-        try:
-            h, c = self.decoder(input=Ybar_t, hx=dec_state)
-        except TypeError:
-            import ipdb
-            ipdb.set_trace()
-            assert True
+        h, c = self.decoder(input=Ybar_t, hx=dec_state)
         e_t = bmm(input=enc_hiddens_proj, mat2=h.unsqueeze(dim=2)).reshape([batch_size, -1])
         # END YOUR CODE
 
