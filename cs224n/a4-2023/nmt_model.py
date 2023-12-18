@@ -39,6 +39,9 @@ class NMT(Module):
     @property
     def dtype(self) -> type: return float32
 
+    @property
+    def max_batch_size(self) -> int: return 256
+
     def __init__(self, embed_size: int, hidden_size: int, vocab: Vocab, dropout_rate: float=0.2) -> None:
         """ Init NMT Model.
 
@@ -47,13 +50,15 @@ class NMT(Module):
         @param vocab: Vocabulary object containing src and tgt languages See vocab.py for documentation.
         @param dropout_rate: Dropout probability, for attention
         """
-        from torch.nn import Conv1d, LSTM, LSTMCell, Linear, Dropout
+        from torch import zeros
+        from torch.nn import Conv1d, LSTM, LSTMCell, Linear, Dropout, Parameter
 
         super(NMT, self).__init__()
         self.model_embeddings = ModelEmbeddings(embed_size=embed_size, vocab=vocab)
         self.hidden_size = hidden_size
         self.dropout_rate = dropout_rate
         self.vocab = vocab
+        self.o_orig = Parameter(data=zeros(self.max_batch_size, self.hidden_size), requires_grad=False)
         # For sanity check only, not relevant to implementation
         self.gen_sanity_check = False
         self.counter = 0
@@ -208,7 +213,7 @@ class NMT(Module):
         @returns combined_outputs (Tensor): combined output tensor  (tgt_len, b,  h), where
                                             tgt_len = maximum target sentence length, b = batch_size,  h = hidden size
         """
-        from torch import zeros, split, cat, stack
+        from torch import split, cat, stack
 
         # Chop off the <END> token for max length sentences.
         target_padded = target_padded[:-1]
@@ -218,7 +223,9 @@ class NMT(Module):
 
         # Initialize previous combined output vector o_{t-1} as zero
         batch_size = enc_hiddens.size(0)
-        o_prev = zeros(batch_size, self.hidden_size)
+        if batch_size > self.max_batch_size:
+            raise ValueError(f'cannot handle batch size bigger than {self.max_batch_size}')
+        o_prev = self.o_orig[:batch_size, :] 
 
         # Initialize a list we will use to collect the combined output o_t on each step
         combined_outputs = list()

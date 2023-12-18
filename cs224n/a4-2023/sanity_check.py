@@ -140,9 +140,9 @@ def question_1e_sanity_check(model: NMT) -> None:
     print('-' * 80, 'Running Sanity Check for Question 1e: Decode', '-' * 80, sep='\n')
 
     # Load Inputs
-    dec_init_state = load(f'{base}/dec_init_state.pkl')
     enc_hiddens = load(f'{base}/enc_hiddens.pkl')
     enc_masks = load(f'{base}/enc_masks.pkl')
+    dec_init_state = load(f'{base}/dec_init_state.pkl')
     target_padded = load(f'{base}/target_padded.pkl')
 
     # Load Outputs
@@ -153,9 +153,20 @@ def question_1e_sanity_check(model: NMT) -> None:
     reinitialize_layers(model)
     COUNTER = [0]
 
+    from torch.cuda import is_available, current_device
+    if is_available():
+        device = current_device()
+        model.to(device)
+        enc_hiddens = enc_hiddens.to(device)
+        enc_masks = enc_masks.to(device)
+        dec_init_state = (value.to(device) for value in dec_init_state)
+        target_padded = target_padded.to(device)
+    else:
+        device = 'cpu'
+
     def stepFunction(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks):
-        dec_state = load(f'{base}/step_dec_state_{COUNTER[0]}.pkl')
-        o_t = load(f'{base}/step_o_t_{COUNTER[0]}.pkl')
+        dec_state = (value.to(device) for value in load(f'{base}/step_dec_state_{COUNTER[0]}.pkl'))
+        o_t = load(f'{base}/step_o_t_{COUNTER[0]}.pkl').to(device)
         COUNTER[0] += 1
         return dec_state, o_t, None
     model.step = stepFunction
@@ -167,7 +178,7 @@ def question_1e_sanity_check(model: NMT) -> None:
     target, pred = combined_outputs_target, combined_outputs_pred
     if target.shape != pred.shape:
         raise ValueError(f'combined_outputs shape incorrect: expect {target.shape} found {pred.shape}')
-    if not allclose(target.numpy(), pred.numpy()):
+    if not allclose(target.numpy(), pred.cpu().numpy()):
         raise ValueError(f'combined_outputs incorrect: expect {target} found {pred}')
 
     print('-' * 80, 'All Sanity Checks Passed for Question 1e: Decode!', '-' * 80, sep='\n')
