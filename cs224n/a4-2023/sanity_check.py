@@ -184,43 +184,74 @@ def question_1e_sanity_check(model: NMT) -> None:
     print('-' * 80, 'All Sanity Checks Passed for Question 1e: Decode!', '-' * 80, sep='\n')
 
 
-def question_1f_sanity_check(model, src_sents, tgt_sents, vocab):
+def question_1f_sanity_check(model: NMT) -> None:
     """ Sanity check for question 1f. 
         Compares student output to that of model with dummy data.
     """
-    print ("-"*80)
-    print("Running Sanity Check for Question 1f: Step")
-    print ("-"*80)
-    reinitialize_layers(model)
+    from numpy import allclose
+    from torch import load, no_grad
+
+    location = dirname(abspath(__file__))
+    base = f'{location}/sanity_check_en_es_data'
+    print('-' * 80, 'Running Sanity Check for Question 1f: Step', '-' * 80, sep='\n')
+
+    reinitialize_layers(model=model)
 
     # Inputs
-    Ybar_t = torch.load('./sanity_check_en_es_data/Ybar_t.pkl')
-    dec_init_state = torch.load('./sanity_check_en_es_data/dec_init_state.pkl')
-    enc_hiddens = torch.load('./sanity_check_en_es_data/enc_hiddens.pkl')
-    enc_masks = torch.load('./sanity_check_en_es_data/enc_masks.pkl')
-    enc_hiddens_proj = torch.load('./sanity_check_en_es_data/enc_hiddens_proj.pkl')
-
+    Ybar_t = load(f'{base}/Ybar_t.pkl')
+    dec_init_state = load(f'{base}/dec_init_state.pkl')
+    enc_hiddens = load(f'{base}/enc_hiddens.pkl')
+    enc_hiddens_proj = load(f'{base}/enc_hiddens_proj.pkl')
+    enc_masks = load(f'{base}/enc_masks.pkl')
     # Output
-    dec_state_target = torch.load('./sanity_check_en_es_data/dec_state.pkl')
-    o_t_target = torch.load('./sanity_check_en_es_data/o_t.pkl')
-    e_t_target = torch.load('./sanity_check_en_es_data/e_t.pkl')
+    dec_state_target = load(f'{base}/dec_state.pkl')
+    o_t_target = load(f'{base}/o_t.pkl')
+    e_t_target = load(f'{base}/e_t.pkl')
+
+    from torch.cuda import is_available, current_device
+    if is_available():
+        device = current_device()
+        model.to(device)
+        enc_hiddens = enc_hiddens.to(device)
+        enc_masks = enc_masks.to(device)
+        dec_init_state = (value.to(device) for value in dec_init_state)
 
     # Run Tests
-    with torch.no_grad():
-        dec_state_pred, o_t_pred, e_t_pred= model.step(Ybar_t, dec_init_state, enc_hiddens, enc_hiddens_proj, enc_masks)
-    assert(dec_state_target[0].shape == dec_state_pred[0].shape), "decoder_state[0] shape is incorrect: it should be:\n {} but is:\n{}".format(dec_state_target[0].shape, dec_state_pred[0].shape)
-    assert(np.allclose(dec_state_target[0].numpy(), dec_state_pred[0].numpy())), "decoder_state[0] is incorrect: it should be:\n {} but is:\n{}".format(dec_state_target[0], dec_state_pred[0])
-    print("dec_state[0] Sanity Checks Passed!")
-    assert(dec_state_target[1].shape == dec_state_pred[1].shape), "decoder_state[1] shape is incorrect: it should be:\n {} but is:\n{}".format(dec_state_target[1].shape, dec_state_pred[1].shape)
-    assert(np.allclose(dec_state_target[1].numpy(), dec_state_pred[1].numpy())), "decoder_state[1] is incorrect: it should be:\n {} but is:\n{}".format(dec_state_target[1], dec_state_pred[1])
-    print("dec_state[1] Sanity Checks Passed!")
-    assert(np.allclose(o_t_target.numpy(), o_t_pred.numpy())), "combined_output is incorrect: it should be:\n {} but is:\n{}".format(o_t_target, o_t_pred)
-    print("combined_output  Sanity Checks Passed!")
-    assert(np.allclose(e_t_target.numpy(), e_t_pred.numpy())), "e_t is incorrect: it should be:\n {} but is:\n{}".format(e_t_target, e_t_pred)
-    print("e_t Sanity Checks Passed!")
-    print ("-"*80)    
-    print("All Sanity Checks Passed for Question 1f: Step!")
-    print ("-"*80)
+    with no_grad():
+        dec_state_pred, o_t_pred, e_t_pred= model.step(Ybar_t=Ybar_t, dec_state=dec_init_state, enc_hiddens=enc_hiddens,
+                                                       enc_hiddens_proj=enc_hiddens_proj, enc_masks=enc_masks)
+
+    target, *_ = dec_state_target
+    pred, *_ = dec_state_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'decoder_state[0] shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.cpu().numpy()):
+        raise ValueError(f'decoder_state[0] incorrect: expect {target} found {pred}')
+    print('dec_state[0] Sanity Checks Passed!')
+
+    *_, target = dec_state_target
+    *_, pred = dec_state_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'decoder_state[1] shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.cpu().numpy()):
+        raise ValueError(f'decoder_state[1] incorrect: expect {target} found {pred}')
+    print('dec_state[1] Sanity Checks Passed!')
+
+    target, pred = o_t_target, o_t_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'o_t shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.cpu().numpy()):
+        raise ValueError(f'o_t incorrect: expect {target} found {pred}')
+    print('o_t Sanity Checks Passed!')
+
+    target, pred = e_t_target, e_t_pred
+    if target.shape != pred.shape:
+        raise ValueError(f'e_t shape incorrect: expect {target.shape} found {pred.shape}')
+    if not allclose(target.numpy(), pred.cpu().numpy()):
+        raise ValueError(f'e_t incorrect: expect {target} found {pred}')
+    print('e_t Sanity Checks Passed!')
+
+    print('-' * 80, 'All Sanity Checks Passed for Question 1f: Step!', '-' * 80, sep='\n')
 
 
 def main() -> None:
@@ -256,11 +287,8 @@ def main() -> None:
         question_1d_sanity_check(model=model, src_sents=src_sents)
     elif args['1e']:
         question_1e_sanity_check(model=model)
-
-    # TODO start here
-
     elif args['1f']:
-        question_1f_sanity_check(model, src_sents, tgt_sents, vocab)
+        question_1f_sanity_check(model=model)
     else:
         raise RuntimeError('invalid run mode')
 
