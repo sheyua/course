@@ -97,6 +97,7 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     if is_available():
         device = current_device()
         model.to(device)
+        source_padded = source_padded.to(device)
 
     # test
     with no_grad():
@@ -104,7 +105,7 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     target, pred = enc_hiddens_target, enc_hiddens_pred
     if target.shape != pred.shape:
         raise ValueError(f'enc_hiddens shape incorrect: expect {target.shape} found {pred.shape}')
-    if not allclose(target.numpy(), pred.numpy()):
+    if not allclose(target.numpy(), pred.cpu().numpy()):
         raise ValueError(f'enc_hiddens incorrect: expect: {target} found {pred}')
     print('enc_hiddens Sanity Checks Passed!')
 
@@ -112,7 +113,7 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     pred, *_ = dec_init_state_pred
     if target.shape != pred.shape:
         raise ValueError(f'dec_init_state[0] shape incorrect: expect {target.shape} found {pred.shape}')
-    if not allclose(target.numpy(), pred.numpy()):
+    if not allclose(target.numpy(), pred.cpu().numpy()):
         raise ValueError(f'dec_init_state[0] incorrect: expect: {target} found {pred}')
     print('dec_init_state[0] Sanity Checks Passed!')
 
@@ -120,7 +121,7 @@ def question_1d_sanity_check(model: NMT, src_sents: SentsType) -> None:
     *_, pred = dec_init_state_pred
     if target.shape != pred.shape:
         raise ValueError(f'dec_init_state[1] shape incorrect: expect {target.shape} found {pred.shape}')
-    if not allclose(target.numpy(), pred.numpy()):
+    if not allclose(target.numpy(), pred.cpu().numpy()):
         raise ValueError(f'dec_init_state[1] incorrect: expect: {target} found {pred}')
     print('dec_init_state[1] Sanity Checks Passed!')
 
