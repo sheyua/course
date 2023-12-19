@@ -305,7 +305,12 @@ def decode(args: Dict[str, str]) -> None:
     model = NMT.load(args['MODEL_PATH'])
 
     if args['--cuda']:
-        model = model.to(torch.device("cuda:0"))
+        assert torch.cuda.is_available()
+        device = torch.cuda.current_device()
+    else:
+        device = 'cpu'
+    print(f'use device: {device}', file=stderr)
+    model = model.to(device)
 
     # EDIT: BEAM SIZE USED TO BE 5
     hypotheses = beam_search(model, test_data_src, beam_size=int(args['--beam-size']),
