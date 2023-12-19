@@ -11,7 +11,7 @@ elif [ "$1" = "train_debug" ]; then
 elif [ "$1" = "test" ]; then
   python3 $location/run.py decode $location/outputs/model.bin $location/zh_en_data/test.zh $location/zh_en_data/test.en $location/outputs/test_outputs.txt --cuda
 elif [ "$1" = "test_local" ]; then
-  python $location/run.py decode $location/outputs/model.bin $location/zh_en_data/test.zh $location/zh_en_data/test.en $location/outputs/test_outputs.txt
+  python $location/run.py decode $location/outputs/model.local.bin $location/zh_en_data/test.zh $location/zh_en_data/test.en $location/outputs/test_outputs.txt
 elif [ "$1" = "dev" ]; then
   python3 $location/run.py decode $location/outputs/model.bin $location/zh_en_data/dev.zh $location/zh_en_data/dev.en $location/outputs/dev_outputs.txt --cuda
 elif [ "$1" = "vocab" ]; then
