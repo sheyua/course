@@ -113,12 +113,18 @@ def compute_corpus_level_bleu_score(references: List[List[str]], hypotheses: Lis
     return bleu.score
 
 
-def train(args: Dict):
+def train(args: Dict[str, str]) -> None:
     """ Train the NMT Model.
-    @param args (Dict): args from cmd line
+    @param args: args from cmd line
     """
-    train_data_src = read_corpus(args['--train-src'], source='src', vocab_size=21000)       # EDIT: NEW VOCAB SIZE
-    train_data_tgt = read_corpus(args['--train-tgt'], source='tgt', vocab_size=8000)
+    from os.path import dirname, abspath
+    location = dirname(abspath(__file__))
+    import ipdb
+    ipdb.set_trace()
+    assert True
+    # EDIT: NEW VOCAB SIZE
+    train_data_src = read_corpus(args['--train-src'], source=f'{location}/outputs/src', vocab_size=21000)
+    train_data_tgt = read_corpus(args['--train-tgt'], source=f'{location}/outputs/tgt', vocab_size=8000)
 
     dev_data_src = read_corpus(args['--dev-src'], source='src', vocab_size=3000)
     dev_data_tgt = read_corpus(args['--dev-tgt'], source='tgt', vocab_size=2000)
@@ -347,7 +353,7 @@ def main():
     args = docopt(__doc__)
 
     # Check pytorch version
-    assert(torch.__version__ >= "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
+    assert torch.__version__ >= '1.0.0'
 
     # seed the random number generators
     seed = int(args['--seed'])
