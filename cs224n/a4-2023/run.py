@@ -279,6 +279,7 @@ def train(args: Dict[str, str]) -> None:
             # hard stop
             if epoch == int(args['--max-epoch']):
                 print('reached maximum number of epochs!', file=stderr)
+                model.save(f'{model_save_path}.{epoch}')
                 exit(0)
 
 
