@@ -9,12 +9,11 @@ Sahil Chopra <schopra8@stanford.edu>
 Vera Lin <veralin@stanford.edu>
 Siyan Li <siyanli@stanford.edu>
 """
-import nltk
-import sentencepiece as spm
-nltk.download('punkt')
-
-
+from nltk import word_tokenize, download
 from typing import List, Union, Tuple, Generator
+
+
+download('punkt')
 
 
 SentType = List[str]
@@ -41,16 +40,15 @@ def pad_sents(sents: Union[SentsType, ISentsType], pad_token: Union[str, int]) -
     return sents_padded
 
 
-def read_corpus(file_path, source, vocab_size=2500):
+def read_corpus(file_path: str, source: str, vocab_size: int=2500) -> SentsType:
     """ Read file, where each sentence is dilineated by a `\n`.
-    @param file_path (str): path to file containing corpus
-    @param source (str): "tgt" or "src" indicating whether text
-        is of the source language or target language
-    @param vocab_size (int): number of unique subwords in
-        vocabulary when reading and tokenizing
+    @param file_path: path to file containing corpus
+    @param source: "tgt" or "src" indicating whether text is of the source language or target language
+    @param vocab_size: number of unique subwords in vocabulary when reading and tokenizing
     """
+    from sentencepiece import SentencePieceProcessor
     data = []
-    sp = spm.SentencePieceProcessor()
+    sp = SentencePieceProcessor()
     sp.load('{}.model'.format(source))
 
     with open(file_path, 'r', encoding='utf8') as f:
@@ -60,7 +58,6 @@ def read_corpus(file_path, source, vocab_size=2500):
             if source == 'tgt':
                 subword_tokens = ['<s>'] + subword_tokens + ['</s>']
             data.append(subword_tokens)
-
     return data
 
 
@@ -72,7 +69,7 @@ def autograder_read_corpus(file_path: str, source: str) -> SentsType:
     """
     data = []
     for line in open(file_path):
-        sent = nltk.word_tokenize(line)
+        sent = word_tokenize(line)
         # only append <s> and </s> to the target sentence
         if source == 'tgt':
             sent = ['<s>'] + sent + ['</s>']

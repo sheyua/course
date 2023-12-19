@@ -19,13 +19,13 @@ Options:
     --freq-cutoff=<int>        frequency cutoff [default: 2]
 """
 
-from collections import Counter
-from docopt import docopt
-from itertools import chain
-import json
 import torch
+from docopt import docopt
 from typing import List
-from utils import read_corpus, pad_sents
+from collections import Counter
+from itertools import chain
+from utils import pad_sents
+import json
 import sentencepiece as spm
 
 
