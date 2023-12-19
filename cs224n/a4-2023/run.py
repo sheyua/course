@@ -119,15 +119,13 @@ def train(args: Dict[str, str]) -> None:
     """
     from os.path import dirname, abspath
     location = dirname(abspath(__file__))
-    import ipdb
-    ipdb.set_trace()
-    assert True
+
     # EDIT: NEW VOCAB SIZE
     train_data_src = read_corpus(args['--train-src'], source=f'{location}/outputs/src', vocab_size=21000)
     train_data_tgt = read_corpus(args['--train-tgt'], source=f'{location}/outputs/tgt', vocab_size=8000)
 
-    dev_data_src = read_corpus(args['--dev-src'], source='src', vocab_size=3000)
-    dev_data_tgt = read_corpus(args['--dev-tgt'], source='tgt', vocab_size=2000)
+    dev_data_src = read_corpus(args['--dev-src'], source=f'{location}/outputs/src', vocab_size=3000)
+    dev_data_tgt = read_corpus(args['--dev-tgt'], source=f'{location}/outputs/tgt', vocab_size=2000)
 
     train_data = list(zip(train_data_src, train_data_tgt))
     dev_data = list(zip(dev_data_src, dev_data_tgt))
@@ -137,10 +135,10 @@ def train(args: Dict[str, str]) -> None:
     valid_niter = int(args['--valid-niter'])
     log_every = int(args['--log-every'])
     model_save_path = args['--save-to']
-
     vocab = Vocab.load(args['--vocab'])
 
-    # model = NMT(embed_size=int(args['--embed-size']),                                 # EDIT: 4X EMBED AND HIDDEN SIZES 
+    # EDIT: 4X EMBED AND HIDDEN SIZES
+    # model = NMT(embed_size=int(args['--embed-size']),
     #             hidden_size=int(args['--hidden-size']),
     #             dropout_rate=float(args['--dropout']),
     #             vocab=vocab)
@@ -151,7 +149,7 @@ def train(args: Dict[str, str]) -> None:
                 vocab=vocab)
     
     tensorboard_path = "nmt" if args['--cuda'] else "nmt_local"
-    writer = SummaryWriter(log_dir=f"./runs/{tensorboard_path}")
+    writer = SummaryWriter(log_dir=f"{location}/outputs/runs/{tensorboard_path}")
     model.train()
 
     uniform_init = float(args['--uniform-init'])
@@ -163,8 +161,12 @@ def train(args: Dict[str, str]) -> None:
     vocab_mask = torch.ones(len(vocab.tgt))
     vocab_mask[vocab.tgt['<pad>']] = 0
 
-    device = torch.device("cuda:0" if args['--cuda'] else "cpu")
-    print('use device: %s' % device, file=sys.stderr)
+    if args['--cuda']:
+        assert torch.cuda.is_available()
+        device = torch.cuda.current_device()
+    else:
+        device = 'cpu'
+    print(f'use device: {device}', file=sys.stderr)
 
     model = model.to(device)
 
@@ -188,7 +190,7 @@ def train(args: Dict[str, str]) -> None:
 
             batch_size = len(src_sents)
 
-            example_losses = -model(src_sents, tgt_sents) # (batch_size,)
+            example_losses = -model(src_sents, tgt_sents)   # (batch_size,)
             batch_loss = example_losses.sum()
             loss = batch_loss / batch_size
 
@@ -212,13 +214,11 @@ def train(args: Dict[str, str]) -> None:
             if train_iter % log_every == 0:
                 writer.add_scalar("loss/train", report_loss / report_examples, train_iter)
                 writer.add_scalar("perplexity/train", math.exp(report_loss / report_tgt_words), train_iter)
-                print('epoch %d, iter %d, avg. loss %.2f, avg. ppl %.2f ' \
-                      'cum. examples %d, speed %.2f words/sec, time elapsed %.2f sec' % (epoch, train_iter,
-                                                                                         report_loss / report_examples,
-                                                                                         math.exp(report_loss / report_tgt_words),
-                                                                                         cum_examples,
-                                                                                         report_tgt_words / (time.time() - train_time),
-                                                                                         time.time() - begin_time), file=sys.stderr)
+                print('epoch %d, iter %d, avg. loss %.2f, avg. ppl %.2f '
+                      'cum. examples %d, speed %.2f words/sec, time elapsed %.2f sec' % (
+                            epoch, train_iter, report_loss / report_examples, math.exp(report_loss / report_tgt_words),
+                            cum_examples, report_tgt_words / (time.time() - train_time), time.time() - begin_time
+                      ), file=sys.stderr)
 
                 train_time = time.time()
                 report_loss = report_tgt_words = report_examples = 0.
@@ -226,10 +226,9 @@ def train(args: Dict[str, str]) -> None:
             # perform validation
             if train_iter % valid_niter == 0:
                 writer.add_scalar("loss/val", cum_loss / cum_examples, train_iter)
-                print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (epoch, train_iter,
-                                                                                         cum_loss / cum_examples,
-                                                                                         np.exp(cum_loss / cum_tgt_words),
-                                                                                         cum_examples), file=sys.stderr)
+                print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (
+                            epoch, train_iter, cum_loss / cum_examples, np.exp(cum_loss / cum_tgt_words), cum_examples
+                      ), file=sys.stderr)
 
                 cum_loss = cum_examples = cum_tgt_words = 0.
                 valid_num += 1
